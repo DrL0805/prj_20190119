@@ -8,7 +8,7 @@
 #include "sm_timer.h"
 #include "mid_rtc.h"
 
-//#include "mod_time.h"
+#include "mod_time.h"
 
 // 2000年-2099年的闰年标记与第一天的星期
 //低7位：表示每年第一天对应的星期
@@ -133,19 +133,19 @@ eMidRTCMsg RtcSecPeriodProcess(void)
 //RTC中断回调函数
 void Mid_Rtc_Isr(void)
 {
-//	Mod_Time_TaskMsg_T TimeMsg;
-//	
-//	TimeMsg.Id = eTimeTaskMsgRTC;
-//	TimeMsg.Param.RTC.Msg = eMidRTCMsgHalfSec;
-//	
-//	if(Mid_RTC.HalfSecCnt++ > 0)
-//	{
-//		Mid_RTC.HalfSecCnt = 0;
-//		
-//		TimeMsg.Param.RTC.Msg = RtcSecPeriodProcess();
-//	}
+	Mod_Time_TaskMsg_T TimeMsg;
+	
+	TimeMsg.Id = eTimeTaskMsgRTC;
+	TimeMsg.Param.RTC.Msg = eMidRTCMsgHalfSec;
+	
+	if(Mid_RTC.HalfSecCnt++ > 0)
+	{
+		Mid_RTC.HalfSecCnt = 0;
+		
+		TimeMsg.Param.RTC.Msg = RtcSecPeriodProcess();
+	}
 
-//	Mod_Time_TaskEventSet(&TimeMsg, 1);	
+	Mod_Time_TaskEventSet(&TimeMsg, 1);	
 }
 
 //**********************************************************************

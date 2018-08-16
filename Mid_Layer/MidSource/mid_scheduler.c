@@ -131,7 +131,7 @@ static void KeyTest(void)
 	Mid_Accel_StartSample();
 	#endif 
 	
-	#if 1	// 角速度计任务测试
+	#if 0	// 角速度计任务测试
 //	MID_SCHD_RTT_LOG(0,"Mid_Gyro_SelfTest %02X \r\n", Mid_Gyro_SelfTest());
 	Mid_Gyro_ParamSet(eMidGyroSampleRate25HZ, eMidGyroSampleRange1000S);
 	Mid_Gyro_StartSample();

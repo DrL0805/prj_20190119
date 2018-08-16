@@ -2,7 +2,5 @@
 #define APP_WIN_SWING_H
 
 
-
-
 #endif
 

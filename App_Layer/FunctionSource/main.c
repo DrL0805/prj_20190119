@@ -11,6 +11,15 @@
 
 #include "am_util_delay.h"
 
+#include "mod_power.h"
+#include "mod_algorithm.h"
+#include "mod_pdu.h"
+#include "mod_flash.h"
+#include "mod_time.h"
+
+#include "app_lcd.h"
+#include "App_win_process.h"
+
 static void Bsp_Init(void)
 {
 	Mid_Schd_ParamInit();	// 共享互斥初始化放在前面
@@ -23,20 +32,20 @@ static void Bsp_Init(void)
 	Mid_Accel_Init();
 	Mid_Gyro_Init();
 	
-//	Drv_RGBLcd_Init();
-//	
-//	// 开启RTC时间
-//	Mid_Rtc_Init();
-////	Mid_Rtc_Start();
-//	
-//	// 测试闹钟
-//	alarm_clock_t tAlarm;
-//	tAlarm.alarmswitch = 1;
-//	tAlarm.reptswitch = 0;
-//	tAlarm.hour = 0;
-//	tAlarm.min = 2;
-//	Mid_AlarmClock_Write(&tAlarm, 3);
-//	
+	Drv_RGBLcd_Init();
+	
+	// 开启RTC时间
+	Mid_Rtc_Init();
+	Mid_Rtc_Start();
+	
+	// 测试闹钟
+	alarm_clock_t tAlarm;
+	tAlarm.alarmswitch = 1;
+	tAlarm.reptswitch = 0;
+	tAlarm.hour = 0;
+	tAlarm.min = 2;
+	Mid_AlarmClock_Write(&tAlarm, 3);
+	
 //	Mid_StopWatch_Init();	// 秒表
 //	Mid_Countdown_Init();	// 倒计时
 
@@ -56,17 +65,17 @@ static void Task_Init(void)
 //	Mid_GPS_TaskCreate();
 //	Mid_MIC_TaskCreate();
 //	Mid_Ble_TaskCreate();
-//	
-//	// 模块化任务
-//	Mod_Pwr_TaskCreate();
-//	Mod_Algo_TaskCreate();
-//	Mod_PDU_TaskCreate();
-//	Mod_Flash_TaskCreate();
-//	Mod_Time_TaskCreate();
-//	
-//	// 应用层任务
-//	App_Win_TaskCreate();
-//	App_Lcd_TaskCreate();	
+
+	// 模块化任务
+	Mod_Pwr_TaskCreate();
+	Mod_Algo_TaskCreate();
+	Mod_PDU_TaskCreate();
+	Mod_Flash_TaskCreate();
+	Mod_Time_TaskCreate();
+	
+	// 应用层任务
+	App_Win_TaskCreate();
+	App_Lcd_TaskCreate();	
 }
 
 static void start_task(void *pvParameters)
@@ -83,14 +92,12 @@ static void start_task(void *pvParameters)
 	vTaskDelete(NULL); 				//删除开始任务
 }
 
-#if 1
 int main(void)
 {
 	/* 系统初始化 */ 
 	System_Init();
 	SEGGER_RTT_Init();
 
-	
 	/* 
 		创建开始任务，让外设在OS系统内初始化
 		因为有些外设初始化过程中用到OS相关函数
@@ -108,7 +115,6 @@ int main(void)
 		SEGGER_RTT_printf(0,"Sys Init Fai \n");
 	}
 }
-#endif
 
 #if 0
 void App_Protocal_Init(void);

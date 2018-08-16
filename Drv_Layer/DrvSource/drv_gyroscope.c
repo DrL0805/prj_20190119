@@ -284,7 +284,8 @@ uint8 Drv_Gyro_Open(void)
    
     SMDrv_SWI2C_Open(GYR_IIC_MODULE,IIC_SPEED_HIGH);
     
-    if(multisensor.gyrostate == uinit &&  multisensor.accelstate == uinit)
+//    if(multisensor.gyrostate == uinit &&  multisensor.accelstate == uinit)
+	if(multisensor.gyrostate == uinit)
     {
         //FIFO使能
         #ifdef ACCEL_BUFFER_ENABLE

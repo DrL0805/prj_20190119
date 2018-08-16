@@ -11,7 +11,7 @@
 #include "mid_accelerate.h"
 #include "mid_gyroscope.h"
 //#include "mid_uart.h"
-//#include "mid_rtc.h"
+#include "mid_rtc.h"
 //#include "mid_stopwatch.h"
 //#include "mid_nandflash.h"
 

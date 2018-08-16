@@ -1,13 +1,12 @@
 
-#include "app_win_sleep.h"
-
+#include "app_win_press.h"
 
 static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 
-#define AppSleepWinMenuNum (sizeof(AppSleepWinMenu)/sizeof(AppSleepWinMenu[0]))	
-App_Win_Menu_T	AppSleepWinMenu[] = 
+#define AppPressWinMenuNum (sizeof(AppPressWinMenu)/sizeof(AppPressWinMenu[0]))	
+App_Win_Menu_T	AppPressWinMenu[] = 
 {
 	{eWinMenukey, App_Win_KeyMenuHandler},
 	{eWinMenuSlide, App_Win_SlideMenuHandler},
@@ -33,17 +32,19 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
             {
             	case eAppSubWinHandle0:
             	case eAppSubWinHandle1:
+				case eAppSubWinHandle2:
             		TmpWinHandle = eTimeWinHandle;
 					break;
             	default:
             		break;
-            }			
+            }
 			break;
 		case MID_KEY0_HOLDSHORT:
 			switch (AppWinParam.CurrSubWinHandle)
             {
             	case eAppSubWinHandle0:
             	case eAppSubWinHandle1:
+				case eAppSubWinHandle2:	
             		break;
             	default:
             		break;
@@ -55,6 +56,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
             {
             	case eAppSubWinHandle0:
             	case eAppSubWinHandle1:
+				case eAppSubWinHandle2:
             		TmpWinHandle = eStoreWinHandle;
 					break;
             	default:
@@ -84,9 +86,13 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 			switch (AppWinParam.CurrSubWinHandle)
             {
             	case eAppSubWinHandle0:
-					TmpWinHandle = eABCWinHandle;
+					TmpWinHandle = eBodyTempWinHandle;
 					break;
-            	case eAppSubWinHandle1:            		
+            	case eAppSubWinHandle1:
+					AppWinParam.CurrSubWinHandle = eAppSubWinHandle2;
+					break;
+				case eAppSubWinHandle2:
+            		AppWinParam.CurrSubWinHandle = eAppSubWinHandle1;
 					break;
             	default:
             		break;
@@ -96,9 +102,13 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 			switch (AppWinParam.CurrSubWinHandle)
             {
             	case eAppSubWinHandle0:
-					TmpWinHandle = eBodyTempWinHandle;
+					TmpWinHandle = eHeartWinHandle;
 					break;
             	case eAppSubWinHandle1:
+					AppWinParam.CurrSubWinHandle = eAppSubWinHandle2;
+					break;
+				case eAppSubWinHandle2:
+            		AppWinParam.CurrSubWinHandle = eAppSubWinHandle1;
 					break;
             	default:
             		break;
@@ -109,12 +119,14 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 		case 3:		// 右滑
 			switch (AppWinParam.CurrSubWinHandle)
             {
-            	case eAppSubWinHandle0: break;
+            	case eAppSubWinHandle0: 
+					break;
             	case eAppSubWinHandle1:
-            		AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+				case eAppSubWinHandle2:
+					AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
 					break;
             	default: break;
-            }
+            }			
 			break;
 		default: break;
 	}
@@ -135,10 +147,11 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 	
 	switch (AppWinParam.CurrSubWinHandle)
 	{
-		case eAppSubWinHandle0:
+		case eAppSubWinHandle0: 
 			AppWinParam.CurrSubWinHandle = eAppSubWinHandle1;
 			break;
 		case eAppSubWinHandle1:
+		case eAppSubWinHandle2:
 			break;
 		default: break;
 	}	
@@ -150,13 +163,13 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 // 函数功能：  窗口初始化
 // 输入参数：  
 // 返回参数：  成功创建的窗口句柄
-eAppWinHandle App_SleepWin_Init(void)
+eAppWinHandle App_PressWin_Init(void)
 {
-	APP_WIN_RTT_LOG(0,"App_SleepWin_Init \r\n");
+	APP_WIN_RTT_LOG(0,"App_PressWin_Init \r\n");
 	
 	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
 	
-	return eSleepWinHandle;
+	return ePressWinHandle;
 }
 
 //**********************************************************************
@@ -164,27 +177,27 @@ eAppWinHandle App_SleepWin_Init(void)
 // 输入参数：  WinHandle	当前窗口句柄
 // 			   message 		传入参数
 // 返回参数：  新的窗口句柄
-eAppWinHandle App_SleepWin_Cb(eAppWinHandle WinHandle, App_Win_Msg_T message)
+eAppWinHandle App_PressWin_Cb(eAppWinHandle WinHandle, App_Win_Msg_T message)
 {
-	APP_WIN_RTT_LOG(0,"App_SleepWin_Cb \r\n");
+	APP_WIN_RTT_LOG(0,"App_PressWin_Cb \r\n");
 	
 	#if 1
-	if(eSleepWinHandle != WinHandle)
+	if(ePressWinHandle != WinHandle)
 		return eErrWinHandle;
 	#endif
 
 	// 搜寻窗口菜单索引号，用于进入正确的回调函数
 	uint32_t TmpWinMenuIndex;
-	for(TmpWinMenuIndex = 0;TmpWinMenuIndex < AppSleepWinMenuNum;TmpWinMenuIndex++)
+	for(TmpWinMenuIndex = 0;TmpWinMenuIndex < AppPressWinMenuNum;TmpWinMenuIndex++)
 	{
-		if(AppSleepWinMenu[TmpWinMenuIndex].MenuTag == message.MenuTag)
+		if(AppPressWinMenu[TmpWinMenuIndex].MenuTag == message.MenuTag)
 			break;
 	}	
 	
 	// 菜单命令有效，则进入对应的处理函数
-	if((TmpWinMenuIndex < AppSleepWinMenuNum) && (NULL != AppSleepWinMenu[TmpWinMenuIndex].callback))
+	if((TmpWinMenuIndex < AppPressWinMenuNum) && (NULL != AppPressWinMenu[TmpWinMenuIndex].callback))
 	{
-		return AppSleepWinMenu[TmpWinMenuIndex].callback(WinHandle, message);
+		return AppPressWinMenu[TmpWinMenuIndex].callback(WinHandle, message);
 	}
 
 	return WinHandle;

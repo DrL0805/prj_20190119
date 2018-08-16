@@ -2,6 +2,5 @@
 #define APP_WIN_FACTORY_H
 
 
-
 #endif
 

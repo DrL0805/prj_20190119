@@ -2,8 +2,6 @@
 #define APP_WIN_CLIMB_H
 
 
-
-
 #endif
 
 
