@@ -56,8 +56,11 @@ static void I2C_Delay(uint8 iic_id)
 //**********************************************************************
 static void I2C_SCL_Out(uint32 u32scl_pin)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0};
 
+	// 临时变量值是随机的，使用前必须清零
+//	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));	
+	
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_4MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -72,8 +75,11 @@ static void I2C_SCL_Out(uint32 u32scl_pin)
 //**********************************************************************
 static void I2C_SDA_Out(uint32 u32sda_pin)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0};
 
+	// 临时变量值是随机的，使用前必须清零，否则不确定变量值导致函数调用错误
+//	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));	
+	
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_4MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -90,8 +96,11 @@ static void I2C_SDA_Out(uint32 u32sda_pin)
 //**********************************************************************
 static void I2C_SDA_In(uint8 iic_id,uint32 u32sda_pin)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0};
 
+	// 临时变量值是随机的，使用前必须清零
+//	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));	
+	
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
     bfGpioCfg.eGPInput       = AM_HAL_GPIO_PIN_INPUT_ENABLE;

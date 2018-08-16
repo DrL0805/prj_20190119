@@ -50,10 +50,10 @@ Drv_IT7259_Param_t	DrvIT7259;
 
 static inline void I2C_PIN_OUT(PIN)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0};
 
 	// 临时变量值是随机的，使用前必须清零
-	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
+//	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
     
 	bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
@@ -65,10 +65,10 @@ static inline void I2C_PIN_OUT(PIN)
 
 static inline void I2C_PIN_IN(PIN)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0};
 
 	// 临时变量值是随机的，使用前必须清零
-	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
+//	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
 	
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
@@ -80,24 +80,20 @@ static inline void I2C_PIN_IN(PIN)
 
 static inline void I2C_SCL_High(PIN)
 {
-//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
 	am_hal_gpio_output_set(PIN);
 }	
 
 static inline void I2C_SCL_Low(PIN)
 {
-//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
 	am_hal_gpio_output_clear(PIN);
 }
 
 static inline void I2C_SDA_High(PIN)
 {
-//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
 	am_hal_gpio_output_set(PIN);
 }
 static inline void I2C_SDA_Low(PIN)
 {
-//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
 	am_hal_gpio_output_clear(PIN);
 }
 
