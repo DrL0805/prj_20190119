@@ -43,72 +43,69 @@
 
 #define IIC_SCL_PIN 	(48)	
 #define IIC_SDA_PIN		(49)
-
+#define I2C_Delay()			am_util_delay_us(1)//am_util_delay_ms(1) //
 
 Drv_IT7259_Param_t	DrvIT7259;
 
-void I2C_PIN_OUT(PIN)
-{
-//    am_hal_gpio_pincfg_t bfGpioCfg;
 
-//    bfGpioCfg.uFuncSel       = 3;
-//    bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
-//    bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
-//	 bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_1_5K;//AM_HAL_GPIO_PIN_PULLUP_6K
-//    am_hal_gpio_pinconfig(PIN, bfGpioCfg);	
-	
+static inline void I2C_PIN_OUT(PIN)
+{
     am_hal_gpio_pincfg_t bfGpioCfg;
 
-    bfGpioCfg.uFuncSel       = 3;
+	// 临时变量值是随机的，使用前必须清零
+	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
+    
+	bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
 //	 bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_6K;//AM_HAL_GPIO_PIN_PULLUP_1_5K;
-	
-//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);//为什么要这个才可以？
-	
+
     am_hal_gpio_pinconfig(PIN, bfGpioCfg);	
 }
 
-void I2C_PIN_IN(PIN)
+static inline void I2C_PIN_IN(PIN)
 {
     am_hal_gpio_pincfg_t bfGpioCfg;
 
+	// 临时变量值是随机的，使用前必须清零
+	memset(&bfGpioCfg, 0x00, sizeof(am_hal_gpio_pincfg_t));
+	
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
     bfGpioCfg.eGPInput       = AM_HAL_GPIO_PIN_INPUT_ENABLE;
-    bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_1_5K;//AM_HAL_GPIO_PIN_PULLUP_6K;//
+//    bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_1_5K;//AM_HAL_GPIO_PIN_PULLUP_6K;//
     am_hal_gpio_pinconfig(PIN, bfGpioCfg);	
 }
 
 
-void I2C_SCL_High(PIN)
+static inline void I2C_SCL_High(PIN)
 {
-	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
-//	am_hal_gpio_output_set(PIN);
+//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
+	am_hal_gpio_output_set(PIN);
 }	
 
-void I2C_SCL_Low(PIN)
+static inline void I2C_SCL_Low(PIN)
 {
-	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
-//	am_hal_gpio_output_clear(PIN);
+//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
+	am_hal_gpio_output_clear(PIN);
 }
 
-void I2C_SDA_High(PIN)
+static inline void I2C_SDA_High(PIN)
 {
-	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
-//	am_hal_gpio_output_set(PIN);
+//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_SET);
+	am_hal_gpio_output_set(PIN);
 }
-void I2C_SDA_Low(PIN)
+static inline void I2C_SDA_Low(PIN)
 {
-	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
-//	am_hal_gpio_output_clear(PIN);
+//	am_hal_gpio_state_write(PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
+	am_hal_gpio_output_clear(PIN);
 }
-uint32_t I2C_SDA_Value(PIN)
+
+static inline uint32_t I2C_SDA_Value(PIN)
 {
 	return am_hal_gpio_input_read(PIN);
 }
 
-#define I2C_Delay()			am_util_delay_ms(1) //am_util_delay_us(10)
 
 static void I2C_PinConfig(void)
 {
@@ -436,20 +433,7 @@ void delay(void)
 
 void Drv_IT7259_Init(void)
 {
-	 SMDrv_GPIO_BitClear(48);	//为什么要这个才可以？,经测试可以是任务IO口
 	I2C_PinConfig();
-
-//	while(1)
-//	{
-//		I2C_SCL_High(IIC_SCL_PIN);
-//		I2C_SDA_High(IIC_SDA_PIN);
-//		I2C_Delay();
-//		I2C_SCL_Low(IIC_SCL_PIN);
-//		I2C_SDA_Low(IIC_SDA_PIN);
-//		I2C_Delay();
-//	}
-	
-//	SMDrv_GPIO_Open(TOUCH_INT_PIN,NULL,Drv_Touch_Isr);
 	
 	if(Ret_OK != Drv_IT7259_IdCapSensor())
 	{
@@ -464,7 +448,6 @@ void Drv_IT7259_Init(void)
 }
 
 
- 
 
 #endif
 

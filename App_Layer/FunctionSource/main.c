@@ -19,15 +19,8 @@ static void Bsp_Init(void)
 
 	Mid_Key_Init();
 	Mid_Motor_Init();
-//	while(1)
-//	{
-//		Mid_Motor_On();
-//		am_util_delay_ms(10);
-//		Mid_Motor_Off();
-//		am_util_delay_ms(10);
-//	}
 //	Mid_Magnetism_Init();
-//	Mid_Accel_Init();
+	Mid_Accel_Init();
 //	Mid_Accel_SelfTest();
 //	Mid_Gyro_Init();
 //	
