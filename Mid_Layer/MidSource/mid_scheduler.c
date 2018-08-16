@@ -161,13 +161,18 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 
 static void Mid_Schd_AccelHandler(Mid_Schd_TaskMsg_T* Msg)
 {
-	int16_t	tData[3];
-	
 	// 读取并更新一次传感器数据，通知其他外设需要自取
 	Mid_Accel_DataUpdate();	
 	
-	Mid_Accel_DataRead(tData);
-	MID_SCHD_RTT_LOG(0,"Accel: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
+	// 通知算法模块
+	Mod_Algo_TaskMsg_T 	tAlgoMsg;
+	
+	tAlgoMsg.Id = eAlgoTaskMsgAccel;
+	Mod_Algo_TaskEventSet(&tAlgoMsg, 0);
+
+//	int16_t	tData[3];
+//	Mid_Accel_DataRead(tData);
+//	MID_SCHD_RTT_LOG(0,"Accel: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
 }
 
 static void Mid_Schd_GyroHandler(Mid_Schd_TaskMsg_T* Msg)

@@ -1,24 +1,8 @@
-#include "platform_common.h"
-#include "platform_debugcof.h"
+//#include "platform_common.h"
+//#include "platform_debugcof.h"
 
-#include "system_task.h"
+#include "main.h"
 
-#include "mid_scheduler.h"
-#include "drv_touch.h"
-#include "module_test.h"
-#include "SEGGER_RTT.h"
-#include "SEGGER_RTT_Conf.h"
-
-#include "am_util_delay.h"
-
-#include "mod_power.h"
-#include "mod_algorithm.h"
-#include "mod_pdu.h"
-#include "mod_flash.h"
-#include "mod_time.h"
-
-#include "app_lcd.h"
-#include "App_win_process.h"
 
 static void Bsp_Init(void)
 {
@@ -54,6 +38,10 @@ static void Bsp_Init(void)
 	Drv_IT7259_Init();
 	
 //	Mid_NandFlash_Init();
+
+	// 场景数据初始化
+	Mid_SportScene_Init();
+	Mid_SportScene_Start();
 }
 
 static void Task_Init(void)

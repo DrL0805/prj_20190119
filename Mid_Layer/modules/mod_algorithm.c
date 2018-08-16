@@ -1,5 +1,7 @@
 
 #include "mod_algorithm.h"
+#include "mid_scheduler.h"
+
 
 #include "rtos.h"
 
@@ -8,9 +10,19 @@ static QueueHandle_t 	sAlgo_QueueHandle;				// 队列句柄
 #define 	ALGO_TASK_QUEUE_WAIT_TICK		100			// 队列阻塞时间
 #define		ALGO_TASK_QUEUE_SIZE				sizeof(Mod_Algo_TaskMsg_T)
 
-// ***********************************************************************
-//	以下是任务调度代码
-// ***********************************************************************
+static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
+{
+	int16_t	tData[3];
+	uint32_t tInterval;
+	MID_ACCEL_PARA_T	tMidAccel;
+	
+	// 读取数据
+	Mid_Accel_ParamGet(&tMidAccel);
+	
+	// 计步算法
+	Mid_SportScene_Algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
+}
+
 static void Mod_Algo_TaskProcess(void *pvParameters)
 {
 	Mod_Algo_TaskMsg_T	Msg;
@@ -28,7 +40,20 @@ static void Mod_Algo_TaskProcess(void *pvParameters)
 	{
 		if(xQueueReceive(sAlgo_QueueHandle, &Msg, portMAX_DELAY))
 		{
-
+			switch (Msg.Id)
+            {
+            	case eAlgoTaskMsgAccel:
+					Mid_Algo_AccelHandler(&Msg);
+            		break;
+            	case eAlgoTaskMsgGyro:
+            		break;
+				case eAlgoTaskMsgMagnetism:
+					break;
+				case eAlgoTaskMsgGPS:
+					break;
+            	default:
+            		break;
+            }
 		}
 	}
 }

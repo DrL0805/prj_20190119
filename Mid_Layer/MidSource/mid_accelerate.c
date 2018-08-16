@@ -183,6 +183,7 @@ void Mid_Accel_DataUpdate(void)
 // 返回参数：	无
 void Mid_Accel_ParamGet(MID_ACCEL_PARA_T* MID_ACCEL_PARA)
 {
+//	MID_ACCEL_PARA = &MID_ACCEL;
 	memcpy(MID_ACCEL_PARA, &MID_ACCEL, sizeof(MID_ACCEL_PARA_T));
 }
 

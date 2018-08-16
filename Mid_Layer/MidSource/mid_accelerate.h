@@ -37,7 +37,6 @@ typedef struct
 	uint32_t    				SamplePeriod;		// 采样定时周期，单位ms
 }MID_ACCEL_PARA_T;
 
-
 extern void Mid_Accel_Init(void);
 extern void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range);
 extern void Mid_Accel_StartSample(void);
@@ -46,7 +45,5 @@ extern void Mid_Accel_DataUpdate(void);
 extern void Mid_Accel_ParamGet(MID_ACCEL_PARA_T* MID_ACCEL_PARA);
 extern void Mid_Accel_DataRead(int16 data[3]);
 extern uint16 Mid_Accel_SelfTest(void);
-
-extern void AccelTask_Create(void);
 
 #endif		// ACCELERATE_APP_H

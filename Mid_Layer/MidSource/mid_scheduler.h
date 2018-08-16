@@ -16,6 +16,7 @@
 //#include "mid_nandflash.h"
 
 //#include "App_win_process.h"
+#include "main.h"
 
 #define MID_SCHD_RTT_DEBUG	3
 #if (1 == MID_SCHD_RTT_DEBUG)	// ´íÎóµÈ¼¶

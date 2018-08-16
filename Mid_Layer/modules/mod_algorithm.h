@@ -2,6 +2,9 @@
 #define __MOD_ALGORITHM_H
 
 #include "platform_common.h"
+#include "mid_sport_scene.h"
+
+
 
 #define MOD_ALGO_RTT_DEBUG	3
 #if (1 == MOD_ALGO_RTT_DEBUG)	// 错误等级
@@ -22,6 +25,16 @@
 #define MOD_ALGO_RTT_ERR(...)
 #endif
 
+
+typedef enum
+{
+	eAlgoTaskMsgAccel,
+	eAlgoTaskMsgGyro,
+	eAlgoTaskMsgMagnetism,
+	eAlgoTaskMsgGPS,
+	eAlgoTaskMsgMax,
+}eAlgoTaskMsgId;
+
 typedef struct
 {
 	uint8_t Flg;
@@ -30,7 +43,7 @@ typedef struct
 /* 中间层任务调度数据结构体 */
 typedef struct
 {
-	uint8_t Id;
+	eAlgoTaskMsgId Id;
 }Mod_Algo_TaskMsg_T;
 
 void Mod_Algo_TaskEventSet(Mod_Algo_TaskMsg_T* Msg, uint8_t FromISR);
