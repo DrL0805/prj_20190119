@@ -21,9 +21,8 @@ static void Bsp_Init(void)
 	Mid_Motor_Init();
 //	Mid_Magnetism_Init();
 	Mid_Accel_Init();
-//	Mid_Accel_SelfTest();
-//	Mid_Gyro_Init();
-//	
+	Mid_Gyro_Init();
+	
 //	Drv_RGBLcd_Init();
 //	
 //	// 开启RTC时间

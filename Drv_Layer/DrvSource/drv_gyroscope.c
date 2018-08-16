@@ -339,6 +339,8 @@ uint8 Drv_Gyro_Set(uint16 sampleRate, uint8 scaleRange)
 {
     uint8 ui8Regtemp[1] = {0x00};
     
+//	Drv_Gyro_Open();
+	
     if (Drv_Gyro_WakeUp())
     {
         return 0xff;
@@ -371,6 +373,8 @@ uint8 Drv_Gyro_Set(uint16 sampleRate, uint8 scaleRange)
     ui8Regtemp[0] |= scaleRange ;
     Gyro_RegisterWrite(BMI160_I2C_ADDR1, BMI160_USER_GYRO_RANGE_ADDR, ui8Regtemp, 1);
 
+//	Drv_Gyro_Close();
+	
     return 0x00;
 }
 
@@ -387,6 +391,8 @@ uint8 Drv_Gyro_SetBuffer(uint16 setState)
     uint8 ui8Regtemp[1] = {0x00};
     uint8 ui8Ret;
     
+//	Drv_Gyro_Open();
+	
     if(setState == 0x01)//使能FIFO
     {
         Gyro_RegisterRead(BMI160_I2C_ADDR1,  BMI160_USER_FIFO_CONFIG_1_ADDR, ui8Regtemp, 1);
@@ -403,6 +409,9 @@ uint8 Drv_Gyro_SetBuffer(uint16 setState)
         ui8Regtemp[0] &= ~(FIFO_GYRO_ENABLE << 7);
         Gyro_RegisterWrite(BMI160_I2C_ADDR1, BMI160_USER_FIFO_CONFIG_1_ADDR, ui8Regtemp, 1); 
     }
+	
+//	Drv_Gyro_Close();
+	
     return ui8Ret;
 }
 
@@ -416,12 +425,16 @@ uint8 Drv_Gyro_SetBuffer(uint16 setState)
 //**********************************************************************
 uint8 Drv_Gyro_Read(int16 xyzData[3])
 {
+//	Drv_Gyro_Open();
+	
     uint8 axisdata[6];
     Gyro_RegisterRead(BMI160_I2C_ADDR1, BMI160_USER_DATA_8_ADDR, axisdata, 6);
     xyzData[0] = ((uint16)axisdata[1]<<8) + axisdata[0];
     xyzData[1] = ((uint16)axisdata[3]<<8) + axisdata[2];
     xyzData[2] = ((uint16)axisdata[5]<<8) + axisdata[4];
 
+//	Drv_Gyro_Close();
+	
     return 0x00;
 }
 
@@ -512,7 +525,7 @@ uint8 Drv_Gyro_SelfTest(void)
 {
    uint8  data;
 
-   Drv_Gyro_Open();
+	Drv_Gyro_Open();
     // Selftest
     Gyro_RegisterRead(BMI160_I2C_ADDR1, BMI160_USER_CHIP_ID_ADDR,&data, 1);
 	

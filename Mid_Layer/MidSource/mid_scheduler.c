@@ -21,6 +21,19 @@ static QueueHandle_t 	sSchd_QueueHandle;				// 队列句柄
 
 // 外部变量
 SemaphoreHandle_t	SPI_I2C_M0_SemaphoreHandle;
+SemaphoreHandle_t	SPI_I2C_M2_SemaphoreHandle;		// 加速度和角速度
+
+// 获取外设资源
+void Mid_Schd_M2MutexTake(void)
+{
+	xSemaphoreTake(SPI_I2C_M2_SemaphoreHandle, portMAX_DELAY);
+}
+
+// 释放外设资源
+void Mid_Schd_M2MutexGive(void)
+{
+	xSemaphoreGive(SPI_I2C_M2_SemaphoreHandle);
+}
 
 //**********************************************************************
 // 函数功能: 按键调度任务处理函数
@@ -112,16 +125,16 @@ static void KeyTest(void)
 	Mid_Mag_StartSample();
 	#endif
 	
-	#if 1	// 加速度计任务测试
-	MID_SCHD_RTT_LOG(0,"Mid_Accel_SelfTest %02X \r\n", Mid_Accel_SelfTest());
+	#if 0	// 加速度计任务测试
+//	MID_SCHD_RTT_LOG(0,"Mid_Accel_SelfTest %02X \r\n", Mid_Accel_SelfTest());
 	Mid_Accel_ParamSet(eMidAccelSampleRate25HZ, eMidAccelSampleRange2G);
 	Mid_Accel_StartSample();
 	#endif 
 	
-	#if 0	// 角速度计任务测试
-//	Mid_Gyro_ParamSet(eMidGyroSampleRate25HZ, eMidGyroSampleRange1000S);
-//	Mid_Gyro_StartSample();
-	MID_SCHD_RTT_LOG(0,"Mid_Gyro_SelfTest %02X \r\n", Mid_Gyro_SelfTest());
+	#if 1	// 角速度计任务测试
+//	MID_SCHD_RTT_LOG(0,"Mid_Gyro_SelfTest %02X \r\n", Mid_Gyro_SelfTest());
+	Mid_Gyro_ParamSet(eMidGyroSampleRate25HZ, eMidGyroSampleRange1000S);
+	Mid_Gyro_StartSample();
 	#endif
 	
 	#if 0	// 窗口任务测试
@@ -159,13 +172,13 @@ static void Mid_Schd_AccelHandler(Mid_Schd_TaskMsg_T* Msg)
 
 static void Mid_Schd_GyroHandler(Mid_Schd_TaskMsg_T* Msg)
 {
-//	int16_t	tData[3];
-//	
-//	// 读取并更新一次传感器数据，通知其他外设需要自取
-//	Mid_Gyro_DataUpdate();	
-//	
-//	Mid_Gyro_DataRead(tData);
-//	MID_SCHD_RTT_LOG(0,"Gyro: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
+	int16_t	tData[3];
+	
+	// 读取并更新一次传感器数据，通知其他外设需要自取
+	Mid_Gyro_DataUpdate();	
+	
+	Mid_Gyro_DataRead(tData);
+	MID_SCHD_RTT_LOG(0,"Gyro: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
 }
 
 static void Mid_Schd_MagHandler(Mid_Schd_TaskMsg_T* Msg)
@@ -183,6 +196,7 @@ void Mid_Schd_ParamInit(void)
 {
 	// 外设访问互斥信号量创建
 	SPI_I2C_M0_SemaphoreHandle   = xSemaphoreCreateMutex();	
+	SPI_I2C_M2_SemaphoreHandle   = xSemaphoreCreateMutex();
 }
 
 //**********************************************************************
@@ -230,7 +244,7 @@ static void Mid_Schd_TaskProcess(void *pvParameters)
 
 //**********************************************************************
 // 函数功能:	
-// 输入参数：	
+// 输入参数：
 // 返回参数：
 void Mid_Schd_TaskEventSet(Mid_Schd_TaskMsg_T* Msg, uint8_t FromISR)
 {

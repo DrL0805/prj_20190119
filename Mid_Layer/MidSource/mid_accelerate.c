@@ -138,7 +138,9 @@ void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range)
 void Mid_Accel_StartSample(void)
 {
 	// 硬件配置
+	Mid_Schd_M2MutexTake();
 	Drv_Accel_Set(Mid_Accel_DrvRateGet(MID_ACCEL.SampleRate), Mid_Accel_DrvRangeGet(MID_ACCEL.SampleRange));
+	Mid_Schd_M2MutexGive();
 	
 	// 更新采样定时器参数并启动
 	Drv_MTimer_Stop(MID_ACCEL.MTiemrId);	
@@ -154,7 +156,9 @@ void Mid_Accel_StartSample(void)
 void Mid_Accel_StopSample(void)
 {
 	// 停止硬件采样
+	Mid_Schd_M2MutexTake();
 	Drv_Accel_GoSleep();
+	Mid_Schd_M2MutexGive();
 	
 	// 停止采样定时器
 	Drv_MTimer_Stop(MID_ACCEL.MTiemrId);	
@@ -168,7 +172,9 @@ void Mid_Accel_StopSample(void)
 // 返回参数：
 void Mid_Accel_DataUpdate(void)
 {
+	Mid_Schd_M2MutexTake();
 	Drv_Accel_Read(MID_ACCEL.LatestData);
+	Mid_Schd_M2MutexGive();
 }
 
 //**********************************************************************

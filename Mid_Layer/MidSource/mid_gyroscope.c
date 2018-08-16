@@ -151,9 +151,9 @@ void Mid_Gyro_Init(void)
 	MID_GYRO.SampleRange = eMidGyroSampleRange500S;
 	MID_GYRO.SamplePeriod = 1000 / MID_GYRO.SampleRate;	
 	MID_GYRO.InitedFlg = true;
-
+	
 	// 创建采样定时器
-//	Drv_MTimer_Create(&MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod, Mid_Accel_IsrCb);
+	Drv_MTimer_Create(&MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod, Mid_Accel_IsrCb);
 }
 
 //**********************************************************************
@@ -175,11 +175,13 @@ void Mid_Gyro_ParamSet(eMidGyroSampleRate Rate, eMidGyroSampleRange Range)
 void Mid_Gyro_StartSample(void)
 {
 	// 硬件配置
+	Mid_Schd_M2MutexTake();
 	Drv_Gyro_Set(Mid_Gyro_DrvRateGet(MID_GYRO.SampleRate), Mid_Gyro_DrvRangeGet(MID_GYRO.SampleRange));
+	Mid_Schd_M2MutexGive();
 	
 	// 更新采样定时器参数并启动
-//	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
-//	Drv_MTimer_Start(MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod);
+	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
+	Drv_MTimer_Start(MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod);
 	
 	MID_GYRO.SamplingFlg = true;	
 }
@@ -191,10 +193,12 @@ void Mid_Gyro_StartSample(void)
 void Mid_Gyro_StopSample(void)
 {
 	// 停止硬件采样
+	Mid_Schd_M2MutexTake();
 	Drv_Gyro_GoSleep();
+	Mid_Schd_M2MutexGive();
 	
 	// 停止采样定时器
-//	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
+	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
 	
 	MID_GYRO.SamplingFlg = false;
 }
@@ -205,7 +209,9 @@ void Mid_Gyro_StopSample(void)
 // 返回参数：
 void Mid_Gyro_DataUpdate(void)
 {
+	Mid_Schd_M2MutexTake();
 	Drv_Gyro_Read(MID_GYRO.LatestData);
+	Mid_Schd_M2MutexGive();
 }
 
 //**********************************************************************
@@ -240,56 +246,6 @@ uint16 Mid_Gyro_SelfTest(void)
 	return Drv_Gyro_SelfTest();
 }
 
-// ***********************************************************************
-//	以下是任务调度代码
-// ***********************************************************************
-// 采样定时器回调函数
-#if 0
-static void Gyro_TimerCallback(TimerHandle_t xTimer)
-{
-	 // 发送任务信号量，通知Task可读取新的数据
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-	vTaskNotifyGiveFromISR(Gyro_TaskHandle, &xHigherPriorityTaskWoken);
-
-	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);	
-}
-
-static void GyroTask_Process(void *pvParameters)
-{	
-	// 创建采样定时器
-    Gyro_TimerHandle=xTimerCreate(
-					(const char*		)"Gyro_TimerHandle",
-					(TickType_t			)(Gyro_TimerPeriod),
-					(UBaseType_t		)pdTRUE,
-					(void*				)Gyro_TimerID,
-					(TimerCallbackFunction_t)Gyro_TimerCallback); //周期定时器，周期1s(1000个时钟节拍)，周期模式	
-	if(Gyro_TimerHandle == NULL)
-	{
-		MID_GYRO_RTT_printf(0,"Gyro_Timer Create Err \r\n");
-	}	
-					
-	while(1)
-	{
-		// 等待任务信号量
-		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);			
-		
-		// 读取最新数据，等待处理
-		Drv_Gyro_Read(MID_GYRO.LatestData);
-
-		MID_GYRO_RTT_printf(0,"Gyro: %d, %d, %d \r\n",MID_GYRO.LatestData[0],MID_GYRO.LatestData[1],MID_GYRO.LatestData[2]);
-		
-	}
-}
-
-void GyroTask_Create(void)
-{
-    if(pdPASS != xTaskCreate(GyroTask_Process, "GyroTask", TASK_STACKDEPTH_GYRO, NULL, TASK_PRIORITY_GYRO, &Gyro_TaskHandle))
-	{
-		MID_GYRO_RTT_printf(0,"GyroTask_Create Err \r\n");
-	}
-}
-#endif
 
 
 

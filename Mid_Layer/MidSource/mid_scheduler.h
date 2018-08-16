@@ -64,10 +64,14 @@ typedef struct
 }Mid_Schd_TaskMsg_T;
 
 
+extern void Mid_Schd_M2MutexTake(void);
+extern void Mid_Schd_M2MutexGive(void);
+
 extern void Mid_Schd_ParamInit(void);
 extern void Mid_Schd_TaskEventSet(Mid_Schd_TaskMsg_T* Msg, uint8_t FromISR);
 extern void Mid_Schd_TaskCreate(void);
 
 extern SemaphoreHandle_t	SPI_I2C_M0_SemaphoreHandle;
+extern SemaphoreHandle_t	SPI_I2C_M2_SemaphoreHandle;
 
 #endif
