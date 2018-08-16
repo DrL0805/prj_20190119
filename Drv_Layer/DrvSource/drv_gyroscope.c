@@ -13,9 +13,9 @@
 
 
 /*******************macro define*******************/
-#define BMI160_I2C_ADDR1                   (0x68 << 1)
+#define BMI160_I2C_ADDR2                   (0x68 << 1)	// SDO脚接GND
 /**< I2C Address needs to be changed */
-#define BMI160_I2C_ADDR2                    (0x69<< 1)
+#define BMI160_I2C_ADDR1                   (0x69<< 1) 	// SDO脚接VDD，梁杰根据H003硬件原理图调换了下
 
 // #define     ACCEL_BUFFER_ENABLE                 0x01
 
@@ -478,6 +478,8 @@ uint8 Drv_Gyro_GoSleep(void)
     multisensor.gyrostate = sleep;
     uint8 ui8Regtemp[1] = {0x00};
 
+	Drv_Gyro_Open();
+	
     ui8Regtemp[0] = GYRO_MODE_SUSPEND;
     Gyro_RegisterWrite(BMI160_I2C_ADDR1, BMI160_CMD_COMMANDS_ADDR, ui8Regtemp, 1);
 
@@ -513,8 +515,11 @@ uint8 Drv_Gyro_SelfTest(void)
    Drv_Gyro_Open();
     // Selftest
     Gyro_RegisterRead(BMI160_I2C_ADDR1, BMI160_USER_CHIP_ID_ADDR,&data, 1);
+	
+	Drv_Gyro_GoSleep();
+	
     Drv_Gyro_Close();
-    if(data == 0x01)
+    if(data == 0xD1)
     {
         return 0x00;
     }           

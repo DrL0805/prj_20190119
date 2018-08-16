@@ -7,7 +7,7 @@
 **
 **********************************************************************/
 //在此模块中使用UART IO口，因此需定义IIC_MODULE
-#define IIC_MODULE
+
 #include "io_config.h"
 
 #include "am_mcu_apollo.h"
@@ -59,8 +59,9 @@ static void I2C_SCL_Out(uint32 u32scl_pin)
     am_hal_gpio_pincfg_t bfGpioCfg;
 
     bfGpioCfg.uFuncSel       = 3;
-    bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
+    bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_4MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
+//	 bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_6K;//AM_HAL_GPIO_PIN_PULLUP_1_5K;
     am_hal_gpio_pinconfig(u32scl_pin, bfGpioCfg);
 }
 
@@ -74,8 +75,9 @@ static void I2C_SDA_Out(uint32 u32sda_pin)
     am_hal_gpio_pincfg_t bfGpioCfg;
 
     bfGpioCfg.uFuncSel       = 3;
-    bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
+    bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_4MA;//AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
+//	 bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_6K;//AM_HAL_GPIO_PIN_PULLUP_1_5K;
     am_hal_gpio_pinconfig(u32sda_pin, bfGpioCfg);
 }
 
@@ -92,8 +94,8 @@ static void I2C_SDA_In(uint8 iic_id,uint32 u32sda_pin)
 
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
-    bfGpioCfg.eGPInput       = 1;
-    bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+    bfGpioCfg.eGPInput       = AM_HAL_GPIO_PIN_INPUT_ENABLE;
+//    bfGpioCfg.ePullup        = AM_HAL_GPIO_PIN_PULLUP_6K;//AM_HAL_GPIO_PIN_PULLUP_1_5K;
     am_hal_gpio_pinconfig(u32sda_pin, bfGpioCfg);
 }
 
@@ -1466,11 +1468,11 @@ ret_type SMDrv_SWI2C_Open(iic_module modul,uint32 u32speed)
         u32scl_pin=IIC0_SCL;
         u32sda_pin=IIC0_SDA;
         break;
-    case ACC_IIC_MODULE:   //加速计和陀螺仪共用 iic5
+    case ACC_IIC_MODULE:   
     case GYR_IIC_MODULE:
-        u8iic_id = IIC5;
-        u32scl_pin=IIC5_SCL;
-        u32sda_pin=IIC5_SDA;
+        u8iic_id = IIC2;
+        u32scl_pin=IIC2_SCL;
+        u32sda_pin=IIC2_SDA;
         break;
     default:
         return Ret_InvalidParam;
@@ -1524,9 +1526,9 @@ ret_type SMDrv_SWI2C_Close(iic_module modul)
     break;
     case ACC_IIC_MODULE:    //加速计和陀螺仪共用 iic5
     case GYR_IIC_MODULE:
-        u8iic_id = IIC5;
-        u32scl_pin=IIC5_SCL;
-        u32sda_pin=IIC5_SDA;
+        u8iic_id = IIC2;
+        u32scl_pin=IIC2_SCL;
+        u32sda_pin=IIC2_SDA;
         break;
     default:
         return Ret_InvalidParam;
@@ -1588,12 +1590,12 @@ ret_type SMDrv_SWI2C_WriteCmd(iic_module modul,uint8 deviceAddr, uint8 regAddr)
     #endif
     case ACC_IIC_MODULE:   //加速计和陀螺仪共用 iic5
     case GYR_IIC_MODULE:
-        if(swiic_info[IIC5].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+        if(swiic_info[IIC2].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_5_Start();
-        I2C_5_WriteByte(deviceAddr);
-        I2C_5_WriteByte(regAddr);
-        I2C_5_Stop();
+        I2C_2_Start();
+        I2C_2_WriteByte(deviceAddr);
+        I2C_2_WriteByte(regAddr);
+        I2C_2_Stop();
         break;
     default:
         return Ret_InvalidParam;
@@ -1646,13 +1648,13 @@ ret_type SMDrv_SWI2C_Write(iic_module modul,uint8 deviceAddr, uint8 regAddr, uin
         #endif
     case ACC_IIC_MODULE:   //加速计和陀螺仪共用 iic5
     case GYR_IIC_MODULE:
-        if(swiic_info[IIC5].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+        if(swiic_info[IIC2].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_5_Start();
-        I2C_5_WriteByte(deviceAddr);
-        I2C_5_WriteByte(regAddr);
-        I2C_5_WriteBytes(data_Point, length);
-        I2C_5_Stop();
+        I2C_2_Start();
+        I2C_2_WriteByte(deviceAddr);
+        I2C_2_WriteByte(regAddr);
+        I2C_2_WriteBytes(data_Point, length);
+        I2C_2_Stop();
         break;
     default:
         return Ret_InvalidParam;
@@ -1712,15 +1714,15 @@ ret_type SMDrv_SWI2C_Read(iic_module modul,uint8 deviceAddr, uint8 regAddr, uint
         #endif
     case ACC_IIC_MODULE:    //加速计和陀螺仪共用 iic5
     case GYR_IIC_MODULE:
-        if(swiic_info[IIC5].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+        if(swiic_info[IIC2].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_5_Start();
-        I2C_5_WriteByte(deviceAddr);
-        I2C_5_WriteByte(regAddr);
-        I2C_5_Start();
-        I2C_5_WriteByte(deviceAddr | 0x01);
-        I2C_5_ReadBytes(data_Point, length);
-        I2C_5_Stop();
+        I2C_2_Start();
+        I2C_2_WriteByte(deviceAddr);
+        I2C_2_WriteByte(regAddr);
+        I2C_2_Start();
+        I2C_2_WriteByte(deviceAddr | 0x01);
+        I2C_2_ReadBytes(data_Point, length);
+        I2C_2_Stop();
         break;
     default:
         return Ret_InvalidParam;

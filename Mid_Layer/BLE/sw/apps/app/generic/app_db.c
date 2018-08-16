@@ -22,13 +22,13 @@
 #include "platform_common.h"
 #include "platform_debugcof.h"
 #include "platform_feature.h"
-
+#include "app_db.h"
 #include "wsf_types.h"
 #include "wsf_assert.h"
 #include "bda.h"
 #include "app_api.h"
 #include "app_main.h"
-#include "app_db.h"
+
 #include "app_cfg.h"
 
 #include "mid_extflash.h"   //for BLE passkey
@@ -105,15 +105,15 @@ static Ble_PassKey passkey;
 // Copy Record list from NVM into the active record list, if any
 void AppCopyRecListInNvm(appDbRec_t *pRecord)
 {
-    extflash_para_t extflash;
+//    extflash_para_t extflash;
     uint8_t i; 
 
-    //step 1: Get passkey
-    extflash.dataAddr = (uint8*)&passkey;
-    extflash.length = sizeof(Ble_PassKey);
-    extflash.result =0;
-    extflash.Cb = NULL;
-    Mid_ExtFlash_ReadBleInfo(EXTFLASH_EVENT_READ_BLE_PASSKEY,&extflash);
+//    //step 1: Get passkey
+//    extflash.dataAddr = (uint8*)&passkey;
+//    extflash.length = sizeof(Ble_PassKey);
+//    extflash.result =0;
+//    extflash.Cb = NULL;
+//    Mid_ExtFlash_ReadBleInfo(EXTFLASH_EVENT_READ_BLE_PASSKEY,&extflash);
 
     //step 2: Copy Record list from NVM into the active record list, if any
     for(i=0;i<APP_DB_NUM_RECS;i++)
@@ -137,12 +137,12 @@ void AppCopyRecListInNvm(appDbRec_t *pRecord)
     if((passkey.u32KeyNum == 0xffffffff) || (i == 0))
         passkey.u32KeyNum = 0;
 
-    Db_Debug((0,"passkey.u32KeyNum: %d,result=%d\n",passkey.u32KeyNum,extflash.result));
+//    Db_Debug((0,"passkey.u32KeyNum: %d,result=%d\n",passkey.u32KeyNum,extflash.result));
 }
 
 int32_t AppSaveNewRecInNvm(uint8_t handle, appDbHdl_t hdl)
 {
-    flash_task_msg_t flashMsg;
+//    flash_task_msg_t flashMsg;
     uint8_t u8ident = 0; //记录record信息是否已存在
     uint8_t i;  
 
@@ -183,12 +183,12 @@ int32_t AppSaveNewRecInNvm(uint8_t handle, appDbHdl_t hdl)
     memcpy((uint8_t *)&passkey.appdb[i], (uint8_t *)hdl, sizeof(appDbRec_t));
 
     //step 3:更新的数据写到flash中
-	flashMsg.id 									= EXTFLASH_ID;
-	flashMsg.flash.extflashEvent.para.dataAddr 		= (uint8*)&passkey;
-	flashMsg.flash.extflashEvent.para.length 		= sizeof(Ble_PassKey);
-    flashMsg.flash.extflashEvent.para.result        =0;
-	flashMsg.flash.extflashEvent.id 				= EXTFLASH_EVENT_WRITE_BLE_PASSKEY;
-	FlashTask_EventSet(&flashMsg);
+//	flashMsg.id 									= EXTFLASH_ID;
+//	flashMsg.flash.extflashEvent.para.dataAddr 		= (uint8*)&passkey;
+//	flashMsg.flash.extflashEvent.para.length 		= sizeof(Ble_PassKey);
+//    flashMsg.flash.extflashEvent.para.result        =0;
+//	flashMsg.flash.extflashEvent.id 				= EXTFLASH_EVENT_WRITE_BLE_PASSKEY;
+//	FlashTask_EventSet(&flashMsg);
 
     return 0;
 }

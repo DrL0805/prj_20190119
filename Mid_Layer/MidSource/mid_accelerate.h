@@ -2,82 +2,51 @@
 #define	MID_ACCELERATE_H
 
 #include "platform_common.h"
+#include "drv_accelerate.h"
 
-// Setting Options
-typedef enum {
-	ACCEL_1HZ   = 1,
-	ACCEL_2HZ   = 2,
-	ACCEL_25HZ  = 25,
-	ACCEL_50HZ  = 50,
-	ACCEL_100HZ = 100,
-	ACCEL_200HZ = 200,
-}accel_freq_option_app;
-
-
-// Setting Options
-typedef enum {
-	ACCEL_2G 	= 0,
-	ACCEL_4G	= 1,
-	ACCEL_8G	= 2,
-	ACCEL_16G	= 3,
-}accel_scale_option_app;
-
-
-// 事件定义
+// 采样范围
 typedef enum
 {
-	ACCEL_SLEEP,
-	ACCEL_HARDWARE_SET,
-	ACCEL_READ_PROCESS,
-	ACCEL_READ_SET,
-	ACCEL_READ_DELETE,
-}ACCELERATE_INTERFACE_E;
+	eMidAccelSampleRange2G,
+	eMidAccelSampleRange4G,
+	eMidAccelSampleRange8G,
+	eMidAccelSampleRange16G,
+}eMidAccelSampleRange;
 
-// 事件定义
-typedef struct 
+// 采样率
+typedef enum
 {
-	uint16			id;							// 事件ID
-	uint16			*readId;					// 读取事件设置与删除的ID地址
-	uint16			rate;						// 硬件采样频率或读取频率
-	uint8			scaleRange;					// 设置采样范围
-	void			(*Cb)(int16 data[3]);		// 数据读取回调函数
-}accel_event_s;
+	eMidAccelSampleRate1HZ   = 1,		// 1000ms
+	eMidAccelSampleRate2HZ   = 2,		// 500ms
+	eMidAccelSampleRate25HZ  = 25,		// 40ms
+	eMidAccelSampleRate50HZ  = 50,		// 20ms
+	eMidAccelSampleRate100HZ = 100,		// 10ms
+	eMidAccelSampleRate200HZ = 200,		// 5ms
+}eMidAccelSampleRate;
 
-//**********************************************************************
-// 函数功能：	初始化硬件传感器，并设置可定时读取的回调函数
-// 输入参数：	IsrCb: 传感器达到可设置的读取时间回调函数
-// 返回参数：	无
-//**********************************************************************
-extern void Mid_Accel_Init(comm_cb *Read_IsrCb);
+typedef struct
+{
+	uint32_t 					MTiemrId;		
+	
+	bool						InitedFlg;		// 已初始化标志
+	bool						SamplingFlg;	// 正在采样标志
+	
+	int16_t 					LatestData[3];		// 保存最新采到的数据
+	eMidAccelSampleRate			SampleRate;			// 硬件采样率
+	eMidAccelSampleRange		SampleRange;		// 硬件采样范围
+	uint32_t    				SamplePeriod;		// 采样定时周期，单位ms
+}MID_ACCEL_PARA_T;
 
-//**********************************************************************
-// 函数功能：	读取当前硬件的采样频率与采样范围
-// 输入参数：	无
-// 返回参数：	无
-//**********************************************************************
-extern void Mid_Accel_SettingRead(uint16 *sampleRate, uint8 *scaleRange);
 
-//**********************************************************************
-// 函数功能：	读取当前加速度的最新值
-// 输入参数：	无
-// 返回参数：	无
-//**********************************************************************
+extern void Mid_Accel_Init(void);
+extern void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range);
+extern void Mid_Accel_StartSample(void);
+extern void Mid_Accel_StopSample(void);
+extern void Mid_Accel_DataUpdate(void);
+extern void Mid_Accel_ParamGet(MID_ACCEL_PARA_T* MID_ACCEL_PARA);
 extern void Mid_Accel_DataRead(int16 data[3]);
-
-//**********************************************************************
-// 函数功能：	加速度事件处理
-// 输入参数：	msg	事件指针
-// 返回参数：	0x00: 操作成功
-//				0xff: 操作失败
-//**********************************************************************
-extern uint16 Mid_Accel_EventProcess(accel_event_s* msg);
-
-//**********************************************************************
-// 函数功能：	传感器自检,调用该函数时，确保该资源未使用
-// 输入参数：	无
-// 返回参数：	0x00:成功
-// 				0xff:失败
-//**********************************************************************
 extern uint16 Mid_Accel_SelfTest(void);
+
+extern void AccelTask_Create(void);
 
 #endif		// ACCELERATE_APP_H

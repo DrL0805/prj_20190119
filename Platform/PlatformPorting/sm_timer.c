@@ -126,12 +126,23 @@ static uint8 ctimer_modul2time(ctimer_module modul,uint16 u16freq,comm_cb *timer
     }
     else if(modul == MULTI_CTIMER_MODULE)    //timer:(0,B)
     {
+		#if 0	// H001
         ptm_info->u32tm_id=0;
         ptm_info->u32tm_seg=AM_HAL_CTIMER_TIMERB;
         ptm_info->u32tm_irq=AM_HAL_CTIMER_INT_TIMERB0;
         ptm_info->u32tm_conf=AM_HAL_CTIMER_FN_REPEAT | AM_HAL_CTIMER_INT_ENABLE | AM_HAL_CTIMER_XT_16_384KHZ;
         ptm_info->u32tm_delay=(uint32)(16384 / u16freq - 1);
         u8cb_id = 1;
+		#endif 
+		
+		#if 1 // H003
+        ptm_info->u32tm_id=0;
+        ptm_info->u32tm_seg=AM_HAL_CTIMER_TIMERB;
+        ptm_info->u32tm_irq=AM_HAL_CTIMER_INT_TIMERB0;
+        ptm_info->u32tm_conf=AM_HAL_CTIMER_FN_REPEAT | AM_HAL_CTIMER_INT_ENABLE | AM_HAL_CTIMER_XT_32_768KHZ;
+        ptm_info->u32tm_delay = (uint32)((32768 * u16freq / 1000) -1);	// תΪms 
+        u8cb_id = 1;
+		#endif
     }
     else if(modul == SYSTICK_CTIMER_MODULE)  //timer:(1,A)
     {

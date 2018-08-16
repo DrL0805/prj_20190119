@@ -112,14 +112,16 @@ static void KeyTest(void)
 	Mid_Mag_StartSample();
 	#endif
 	
-	#if 0	// 加速度计任务测试
-	Mid_Accel_ParamSet(eMidAccelSampleRate2HZ, eMidAccelSampleRange2G);
+	#if 1	// 加速度计任务测试
+	MID_SCHD_RTT_LOG(0,"Mid_Accel_SelfTest %02X \r\n", Mid_Accel_SelfTest());
+	Mid_Accel_ParamSet(eMidAccelSampleRate1HZ, eMidAccelSampleRange2G);
 	Mid_Accel_StartSample();
 	#endif 
 	
 	#if 0	// 角速度计任务测试
-	Mid_Gyro_ParamSet(eMidGyroSampleRate25HZ, eMidGyroSampleRange1000S);
-	Mid_Gyro_StartSample();
+//	Mid_Gyro_ParamSet(eMidGyroSampleRate25HZ, eMidGyroSampleRange1000S);
+//	Mid_Gyro_StartSample();
+	MID_SCHD_RTT_LOG(0,"Mid_Gyro_SelfTest %02X \r\n", Mid_Gyro_SelfTest());
 	#endif
 	
 	#if 0	// 窗口任务测试
@@ -146,13 +148,13 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 
 static void Mid_Schd_AccelHandler(Mid_Schd_TaskMsg_T* Msg)
 {
-//	int16_t	tData[3];
-//	
-//	// 读取并更新一次传感器数据，通知其他外设需要自取
-//	Mid_Accel_DataUpdate();	
-//	
-//	Mid_Accel_DataRead(tData);
-//	MID_SCHD_RTT_LOG(0,"Accel: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
+	int16_t	tData[3];
+	
+	// 读取并更新一次传感器数据，通知其他外设需要自取
+	Mid_Accel_DataUpdate();	
+	
+	Mid_Accel_DataRead(tData);
+	MID_SCHD_RTT_LOG(0,"Accel: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
 }
 
 static void Mid_Schd_GyroHandler(Mid_Schd_TaskMsg_T* Msg)
@@ -198,6 +200,9 @@ static void Mid_Schd_TaskProcess(void *pvParameters)
 	}
 	
 	MID_SCHD_RTT_LOG(0,"Mid_Schd_TaskCreate Suc \r\n");
+	
+	Mid_Accel_ParamSet(eMidAccelSampleRate1HZ, eMidAccelSampleRange2G);
+	Mid_Accel_StartSample();
 	
 	while(1)
 	{

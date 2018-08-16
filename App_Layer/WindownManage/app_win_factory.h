@@ -3,9 +3,5 @@
 
 
 
-uint16 App_Factory_Win_Init(void);
-uint16 App_Factory_Win_CallBack(uint16 sysHandle,uint16 tagMenu,menuMessage message);
-
-
 #endif
 

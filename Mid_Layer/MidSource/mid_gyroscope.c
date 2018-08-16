@@ -1,378 +1,296 @@
 /**********************************************************************
 **
-**æ¨¡å—è¯´æ˜: midå±‚é™€èºä»ªæ¥å£
-**è½¯ä»¶ç‰ˆæœ¬ï¼Œä¿®æ”¹æ—¥å¿—(æ—¶é—´ï¼Œå†…å®¹),ä¿®æ”¹äºº:
-**   V1.0   2018.4.25  ä¿®æ”¹æµç¨‹  ZSL  
+**Ä£¿éËµÃ÷: mid²ãÍÓÂİÒÇ½Ó¿Ú
+**Èí¼ş°æ±¾£¬ĞŞ¸ÄÈÕÖ¾(Ê±¼ä£¬ÄÚÈİ),ĞŞ¸ÄÈË:
+**   V1.0   2018.4.25  ĞŞ¸ÄÁ÷³Ì  ZSL  
 **
 **********************************************************************/
-#include "drv_mtimer.h"
-#include "drv_gyroscope.h"
+#include "rtos.h"
 #include "mid_gyroscope.h"
+#include "drv_mtimer.h"
+#include "mid_scheduler.h"
 
-#define		GYRO_NUM_MAX			8
+// DEBUG¿ª¹Ø **************************************************************
+#define MID_GYRO_RTT_DEBUG_ON	1
+#if MID_GYRO_RTT_DEBUG_ON
+#define MID_GYRO_RTT_printf	SEGGER_RTT_printf
+#else
+#define MID_GYRO_RTT_printf(...)
+#endif
 
-static int16		gyroData[3];			// ä¸‰è½´å€¼
-static uint16		gyroSampleRate;			// ç¡¬ä»¶é‡‡æ ·ç‡
-static uint16		gyroScaleRange;			// ç¡¬ä»¶é‡‡æ ·èŒƒå›´
-static uint16		readRateMax;			// è¯»å–çš„æœ€å¤§é€Ÿç‡
-static uint16		sensorTimerId;			// ä¼ æ„Ÿå™¨çš„å®šæ—¶å™¨ID
-
-typedef struct
-{
-	uint16	freq;						// è®¾ç½®è¯»å–çš„é¢‘ç‡
-	uint16	cnt;						// è®¡æ•°å€¼
-	uint16	aimCnt;						// ç›®æ ‡è®¡æ•°å€¼
-	void		(*ReadCb)(int16 data[3]);	// å›è°ƒå‡½æ•°ï¼Œå¹¶ä¼ å…¥ä¸‰è½´æ•°æ®
-}gyro_para_s;
-
-static	gyro_para_s gyroPara[GYRO_NUM_MAX];
-static	void (*GyroReadIsrCb)(void);
-
-
-/************** function define *****************************/
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	ç¡¬ä»¶å®šæ—¶å™¨ä¸­æ–­å›è°ƒå‡½æ•°ï¼Œ
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
-static void GyroReadIsr(void)
-{
-	GyroReadIsrCb();
-}
+// ÄÚ²¿±äÁ¿ **************************************************************
+MID_GYRO_PARA_T	MID_GYRO;
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	åˆå§‹åŒ–ç¡¬ä»¶ä¼ æ„Ÿå™¨ï¼Œå¹¶è®¾ç½®å¯å®šæ—¶è¯»å–çš„å›è°ƒå‡½æ•°
-// è¾“å…¥å‚æ•°ï¼š	IsrCb: ä¼ æ„Ÿå™¨è¾¾åˆ°å¯è®¾ç½®çš„è¯»å–æ—¶é—´å›è°ƒå‡½æ•°
-// è¿”å›å‚æ•°ï¼š	æ— 
-static void GyroSleep(void)
+// º¯Êı¹¦ÄÜ£º	²ÉÑù¶¨Ê±Æ÷³¬Ê±»Øµ÷º¯Êı
+// ÊäÈë²ÎÊı£º	
+// ·µ»Ø²ÎÊı£º	
+static void Mid_Accel_IsrCb(void)
 {
-	uint16 i; 
-	for(i = 0; i < GYRO_NUM_MAX; i++)
-	{
-		gyroPara[i].freq		= 0;
-		gyroPara[i].cnt		= 0;
-		gyroPara[i].aimCnt	= 0;
-	}
-
-	Drv_MultiTimer_Delete(sensorTimerId);
-	Drv_Gyro_GoSleep();
-
-
-	gyroSampleRate			= 0;
-	gyroScaleRange			= 0;
-	readRateMax				= 0;
-	sensorTimerId			= 0xffff;
-}
-
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š   é…ç½®åŠ é€Ÿåº¦ä¼ æ„Ÿå™¨ç¡¬ä»¶é‡‡æ ·é¢‘ç‡ä¸æµ‹é‡èŒƒå›´
-// è¾“å…¥å‚æ•°ï¼š   IsrCb: ä¼ æ„Ÿå™¨è¾¾åˆ°å¯è®¾ç½®çš„è¯»å–æ—¶é—´å›è°ƒå‡½æ•°
-// è¿”å›å‚æ•°ï¼š	0x00:æˆåŠŸ
-// 				0xff:å¤±è´¥
-static uint16 GyroHardwareSet(uint16 sampleRate, uint8 scaleRange)
-{
-	uint16 sampleRateTemp;
-	uint8 scaleRangeTemp;
-	switch(sampleRate)
-	{
-		case GYRO_1HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_25HZ;
-		break;
-
-		case GYRO_2HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_25HZ;
-		break;
-
-		case GYRO_25HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_25HZ;
-		break;
-
-		case GYRO_50HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_50HZ;
-		break;
-
-		case GYRO_100HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_200HZ;
-		break;
-
-		case GYRO_200HZ:
-		sampleRateTemp	= GYO_SAMPLERATE_200HZ;
-		break;
-
-		default:
-		if(sampleRate < 40)
-			sampleRateTemp	= GYO_SAMPLERATE_50HZ;
-		else if(sampleRate < 90)
-			sampleRateTemp	= GYO_SAMPLERATE_100HZ;
-		else if(sampleRate <= 250)
-			sampleRateTemp	= GYO_SAMPLERATE_400HZ;
-		else
-			return 0xff;
-	}
-
-	switch(scaleRange)
-	{
-		case GYRO_250S:
-		scaleRangeTemp	= GYRO_SCALE_RANGE_250_DEG_SEC;
-		break;
-
-		case GYRO_500S:
-		scaleRangeTemp	= GYRO_SCALE_RANGE_500_DEG_SEC;
-		break;
-		
-		case GYRO_1000S:
-		scaleRangeTemp	= GYRO_SCALE_RANGE_1000_DEG_SEC;
-		break;
-		
-		case GYRO_2000S:
-		scaleRangeTemp	= GYRO_SCALE_RANGE_2000_DEG_SEC;
-		break;
-
-		default:
-		return 0xffff;
-	}
-
-	return Drv_Gyro_Set(sampleRateTemp, scaleRangeTemp);
-}
-
-//**********************************************************************
-
-// å‡½æ•°åŠŸèƒ½ï¼š	è¿›è¡Œè¯»å–ç¡¬ä»¶ä¼ æ„Ÿå™¨å€¼ï¼Œå¹¶æ›´æ–°ä¸­é—´å±‚ç¼“å­˜
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
-static void GyroReadProcess(void)
-{
-	uint16 paraCnt;
-
-	Drv_Gyro_Read(gyroData);
-
-	for(paraCnt = 0;paraCnt < GYRO_NUM_MAX; paraCnt++)//æ¯ä¸ªæœ‰æ•ˆçš„MultiTimerçš„Cntéƒ½å¢åŠ 1
-	{
-		if(gyroPara[paraCnt].freq != 0)
-		{
-			gyroPara[paraCnt].cnt++;
-			
-			if(gyroPara[paraCnt].cnt >= gyroPara[paraCnt].aimCnt)
-			{
-				gyroPara[paraCnt].ReadCb(gyroData);
-				gyroPara[paraCnt].cnt = 0;
-			}
-		}
-	}
-}
-
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	è®¾ç½®è¯»å–çš„è¯»å–æ•°æ®é¢‘ç‡ã€é‡‡æ ·èŒƒå›´ã€æ›´æ–°çš„å›è°ƒå‡½æ•°
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
-static uint16 GyroReadSet(uint16 *id, uint16 readRate, uint8 scaleRange, void (*Cb)(int16 data[3]))
-{
-	uint16 i;
-	uint16	idTemp, maxFreqHzTemp;
-
-	if(readRate == 0 ) //å¦‚æœé¢‘ç‡ä¸º0Hzï¼Œåˆ™è®¾ç½®å¤±è´¥ã€‚
-	{
-		return 0xFF;
-	}
-
-	for(i = 0; i < GYRO_NUM_MAX; i++)
-	{
-		if(gyroPara[i].freq == 0)
-		{
-			idTemp	= i;
-			*id		= idTemp;
-			break;
-		}
-	}
-
-	// æ‰€æœ‰å®šæ—¶å™¨å‡å·²åˆ†é…å®Œäº†
-	if(i == GYRO_NUM_MAX)
-		return 0xff;
-
-
-	gyroScaleRange				= scaleRange;
-
-	gyroPara[idTemp].freq		= readRate;
-	gyroPara[idTemp].ReadCb	= Cb;
+	Mid_Schd_TaskMsg_T Msg;
+	Msg.Id = eSchdTaskMsgGyro;
 	
-
-	maxFreqHzTemp	= 0;
-	for(i = 0; i < GYRO_NUM_MAX; i++)
-	{
-		if(maxFreqHzTemp < gyroPara[i].freq)
-			maxFreqHzTemp	= gyroPara[i].freq;
-	}
-
-	if( maxFreqHzTemp != readRateMax )
-	{
-		// ç¡¬ä»¶å®šæ—¶å™¨é¢‘ç‡æ”¹å˜ï¼Œè®¡æ•°éœ€é‡æ–°è°ƒæ•´
-		readRateMax 		= maxFreqHzTemp;
-		gyroSampleRate		= maxFreqHzTemp;
-
-		for(i = 0; i < GYRO_NUM_MAX; i++)
-		{
-			if(gyroPara[i].freq != 0)
-			{
-				gyroPara[i].cnt		= 0;
-				gyroPara[i].aimCnt	= readRateMax / gyroPara[i].freq;
-			}
-		}
-
-		if(0xff == GyroHardwareSet(gyroSampleRate, gyroScaleRange))
-			return 0xff;
-
-		Drv_MultiTimer_Delete(sensorTimerId);
-		Drv_MultiTimer_Set(&sensorTimerId, readRateMax, GyroReadIsr);
-	}
-	return 0x00;
+	Mid_Schd_TaskEventSet(&Msg, 1);	
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	è®¾ç½®è¯»å–çš„è¯»å–æ•°æ®é¢‘ç‡ã€é‡‡æ ·èŒƒå›´ã€æ›´æ–°çš„å›è°ƒå‡½æ•°
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
-static uint16 GyroReadDelete(uint16 id)
+// º¯Êı¹¦ÄÜ£º	¸ù¾İµ±Ç°²ÉÑùÂÊ£¬·µ»Ø²ÉÑùÖÜÆÚ
+// ÊäÈë²ÎÊı£º	SampleRate ²ÉÑùÂÊ
+// ·µ»Ø²ÎÊı£º	²ÉÑùÖÜÆÚ£¬µ¥Î»ms
+//**********************************************************************
+static uint16_t Mid_Gyro_GetSamplePeriod(bsp_gyroscope_osr SampleRate)
 {
-	uint16 i;
-	uint16	maxFreqHzTemp;
-
-	if(id >= GYRO_NUM_MAX)
-		return 0xff;
-
-
-	gyroPara[id].freq			= 0;
-	gyroPara[id].cnt			= 0;
-	gyroPara[id].aimCnt		= 0;
-
-
-	maxFreqHzTemp					= 0;
-
-	// æŸ¥æ‰¾æœ€é«˜è¯»å–é¢‘ç‡
-	for(i = 0; i < GYRO_NUM_MAX; i++)
+	uint16_t TmpSamplePeriod;	
+	
+	switch (SampleRate)
 	{
-		if(maxFreqHzTemp < gyroPara[i].freq)
-			maxFreqHzTemp	= gyroPara[i].freq;
+		case GYO_SAMPLERATE_NONE   :
+			TmpSamplePeriod = 0;
+			break;
+		case GYO_SAMPLERATE_25HZ :	
+			TmpSamplePeriod = 40;
+			break;
+		case GYO_SAMPLERATE_50HZ :	
+			TmpSamplePeriod = 20;
+			break;
+		case GYO_SAMPLERATE_100HZ :	
+			TmpSamplePeriod = 10;
+			break;
+		case GYO_SAMPLERATE_200HZ :	
+		case GYO_SAMPLERATE_400HZ :	
+		case GYO_SAMPLERATE_800HZ   :	
+		case GYO_SAMPLERATE_1600HZ  :	
+		case GYO_SAMPLERATE_3200HZ  :	
+			TmpSamplePeriod = 5;
+			break;
+		default:
+			TmpSamplePeriod = 0;
+			break;
 	}
-
-	// ç¡¬ä»¶å®šæ—¶å™¨é¢‘ç‡æ”¹å˜ï¼Œè®¡æ•°éœ€é‡æ–°è°ƒæ•´
-	if(maxFreqHzTemp != readRateMax)
-	{
-		readRateMax			= maxFreqHzTemp;
-		gyroSampleRate		= maxFreqHzTemp;
-		
-		// æ‰€æœ‰å®šæ—¶å™¨å‡å·²å…³é—­
-		if(maxFreqHzTemp == 0)
-		{
-			if(sensorTimerId != 0xffff)
-			{
-				Drv_MultiTimer_Delete(sensorTimerId);
-				sensorTimerId		= 0xffff;
-			}
-			Drv_Gyro_GoSleep();
-			return 0x00;
-		}
-
-
-		for(i = 0; i < GYRO_NUM_MAX; i++)
-		{
-			if(gyroPara[i].freq != 0)
-			{
-				gyroPara[i].cnt		= 0;
-				gyroPara[i].aimCnt	= readRateMax / gyroPara[i].freq;
-			}
-		}
-
-		if(0xff == GyroHardwareSet(gyroSampleRate, gyroScaleRange))
-			return 0xff;
-
-		Drv_MultiTimer_Delete(sensorTimerId);
-		Drv_MultiTimer_Set(&sensorTimerId, readRateMax, GyroReadIsr);
-	}
-	return 0x00;
+	
+	return TmpSamplePeriod;
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	åˆå§‹åŒ–ç¡¬ä»¶ä¼ æ„Ÿå™¨ï¼Œå¹¶è®¾ç½®å¯å®šæ—¶è¯»å–çš„å›è°ƒå‡½æ•°
-// è¾“å…¥å‚æ•°ï¼š	IsrCb: ä¼ æ„Ÿå™¨è¾¾åˆ°å¯è®¾ç½®çš„è¯»å–æ—¶é—´å›è°ƒå‡½æ•°
-// è¿”å›å‚æ•°ï¼š	æ— 
-//**********************************************************************
-void Mid_Gyro_Init(void (*IsrCb)(void))
+// º¯Êı¹¦ÄÜ£º	»ñÈ¡Çı¶¯²ã²ÉÑùÂÊ²ÎÊı
+// ÊäÈë²ÎÊı£º	Rate ÖĞ¼ä²ã²ÉÑùÂÊÃ¶¾Ù²ÎÊı
+// ·µ»Ø²ÎÊı£º	Çı¶¯²ã²ÉÓÃÂÊÃ¶¾Ù²ÎÊı
+static bsp_gyroscope_osr Mid_Gyro_DrvRateGet(eMidGyroSampleRate Rate)
 {
-	Drv_Gyro_Open();
-	gyroSampleRate	= GYO_SAMPLERATE_NONE;
-	gyroScaleRange	= GYRO_SCALE_RANGE_125_DEG_SEC;
-	sensorTimerId	= 0xffff;
-	GyroReadIsrCb	= IsrCb;
+	bsp_gyroscope_osr RetVal;
+	
+	switch(Rate)
+	{
+		case eMidGyroSampleRate1HZ:
+		case eMidGyroSampleRate2HZ:
+		case eMidGyroSampleRate25HZ:
+			RetVal = GYO_SAMPLERATE_25HZ;
+			break;
+		case eMidGyroSampleRate50HZ:
+			RetVal = GYO_SAMPLERATE_50HZ;
+			break;
+		case eMidGyroSampleRate100HZ:
+			RetVal = GYO_SAMPLERATE_100HZ;
+			break;
+		case eMidGyroSampleRate200HZ:
+			RetVal = GYO_SAMPLERATE_200HZ;
+			break;
+		default:
+			RetVal = GYO_SAMPLERATE_25HZ;
+			break;
+	}
+	
+	return RetVal;	
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	»ñÈ¡Çı¶¯²ã²ÉÑù²ÎÊı
+// ÊäÈë²ÎÊı£º	Rate ÖĞ¼ä²ã²ÉÑù·¶Î§Ã¶¾Ù²ÎÊı
+// ·µ»Ø²ÎÊı£º	Çı¶¯²ã²ÉÓÃ·¶Î§Ã¶¾Ù²ÎÊı
+static bsp_gyroscope_scalerange Mid_Gyro_DrvRangeGet(eMidGyroSampleRange Range)
+{
+	bsp_gyroscope_scalerange RetVal;
+	
+	switch(Range)
+	{
+		case eMidGyroSampleRange125S:
+			RetVal = GYRO_SCALE_RANGE_125_DEG_SEC;
+			break;
+		case eMidGyroSampleRange250S:
+			RetVal = GYRO_SCALE_RANGE_250_DEG_SEC;
+			break;
+		case eMidGyroSampleRange500S:
+			RetVal = GYRO_SCALE_RANGE_500_DEG_SEC;
+			break;
+		case eMidGyroSampleRange1000S:
+			RetVal = GYRO_SCALE_RANGE_1000_DEG_SEC;
+			break;
+		case eMidGyroSampleRange2000S:
+			RetVal = GYRO_SCALE_RANGE_2000_DEG_SEC;
+			break;
+		default:
+			RetVal = GYRO_SCALE_RANGE_500_DEG_SEC;
+			break;
+	}
+	
+	return RetVal;
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	³õÊ¼»¯Ó²¼ş´«¸ĞÆ÷£¬²¢ÉèÖÃ¿É¶¨Ê±¶ÁÈ¡µÄ»Øµ÷º¯Êı
+// ÊäÈë²ÎÊı£º	IsrCb: ´«¸ĞÆ÷´ïµ½¿ÉÉèÖÃµÄ¶ÁÈ¡Ê±¼ä»Øµ÷º¯Êı
+// ·µ»Ø²ÎÊı£º	ÎŞ
+//**********************************************************************
+void Mid_Gyro_Init(void)
+{
+	// Ó²¼ş³õÊ¼²¢ĞİÃß
 	Drv_Gyro_GoSleep();
+	
+	// Ä¬ÈÏ²ÎÊı³õÊ¼»¯
+	MID_GYRO.SampleRate = eMidGyroSampleRate25HZ;
+	MID_GYRO.SampleRange = eMidGyroSampleRange500S;
+	MID_GYRO.SamplePeriod = 1000 / MID_GYRO.SampleRate;	
+	MID_GYRO.InitedFlg = true;
+
+	// ´´½¨²ÉÑù¶¨Ê±Æ÷
+//	Drv_MTimer_Create(&MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod, Mid_Accel_IsrCb);
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	è¯»å–å½“å‰åŠ é€Ÿåº¦çš„æœ€æ–°å€¼
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
+// º¯Êı¹¦ÄÜ£º	²ÎÊıÉèÖÃ
+// ÊäÈë²ÎÊı£º	Rate ²ÉÑùÂÊ
+//				Range ²ÉÑùÖÜÆÚ
+// ·µ»Ø²ÎÊı£º	ÎŞ
+void Mid_Gyro_ParamSet(eMidGyroSampleRate Rate, eMidGyroSampleRange Range)
+{
+	MID_GYRO.SampleRate = Rate;
+	MID_GYRO.SampleRange = Range;
+	MID_GYRO.SamplePeriod = 1000 / MID_GYRO.SampleRate;		
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	¿ªÊ¼²ÉÑù
+// ÊäÈë²ÎÊı£º	²ÉÑùÖÜÆÚºÍ²ÉÑù·¶Î§
+// ·µ»Ø²ÎÊı£º	
+void Mid_Gyro_StartSample(void)
+{
+	// Ó²¼şÅäÖÃ
+	Drv_Gyro_Set(Mid_Gyro_DrvRateGet(MID_GYRO.SampleRate), Mid_Gyro_DrvRangeGet(MID_GYRO.SampleRange));
+	
+	// ¸üĞÂ²ÉÑù¶¨Ê±Æ÷²ÎÊı²¢Æô¶¯
+//	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
+//	Drv_MTimer_Start(MID_GYRO.MTiemrId, MID_GYRO.SamplePeriod);
+	
+	MID_GYRO.SamplingFlg = true;	
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	Í£Ö¹²ÉÑù
+// ÊäÈë²ÎÊı£º	
+// ·µ»Ø²ÎÊı£º	
+void Mid_Gyro_StopSample(void)
+{
+	// Í£Ö¹Ó²¼ş²ÉÑù
+	Drv_Gyro_GoSleep();
+	
+	// Í£Ö¹²ÉÑù¶¨Ê±Æ÷
+//	Drv_MTimer_Stop(MID_GYRO.MTiemrId);	
+	
+	MID_GYRO.SamplingFlg = false;
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	¶ÁÈ¡Ò»´ÎÓ²¼şÊı¾İ²¢¸üĞÂ£¬µÈ´ıÓĞĞèÒªµÄÍâÉèÀ´»ñÈ¡
+// ÊäÈë²ÎÊı£º	
+// ·µ»Ø²ÎÊı£º
+void Mid_Gyro_DataUpdate(void)
+{
+	Drv_Gyro_Read(MID_GYRO.LatestData);
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	»ñÈ¡ËùÓĞÅäÖÃ²ÎÊı
+// ÊäÈë²ÎÊı£º	ÎŞ
+// ·µ»Ø²ÎÊı£º	ÎŞ
+void Mid_Gyro_ParamGet(MID_GYRO_PARA_T* MID_GYRO_PARA)
+{
+	memcpy(MID_GYRO_PARA, &MID_GYRO, sizeof(MID_GYRO_PARA_T));
+}
+
+//**********************************************************************
+// º¯Êı¹¦ÄÜ£º	¶ÁÈ¡µ±Ç°¼ÓËÙ¶ÈµÄ×îĞÂÖµ
+// ÊäÈë²ÎÊı£º	ÎŞ
+// ·µ»Ø²ÎÊı£º	ÎŞ
 //**********************************************************************
 void Mid_Gyro_DataRead(int16 data[3])
 {
-	data[0]		= gyroData[0];
-	data[1]		= gyroData[1];
-	data[2]		= gyroData[2];
+	data[0]		= MID_GYRO.LatestData[0];
+	data[1]		= MID_GYRO.LatestData[1];
+	data[2]		= MID_GYRO.LatestData[2];
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	è¯»å–å½“å‰ç¡¬ä»¶çš„é‡‡æ ·é¢‘ç‡ä¸é‡‡æ ·èŒƒå›´
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	æ— 
-//**********************************************************************
-void Mid_Gyro_SettingRead(uint16 *sampleRate, uint8 *scaleRange)
-{
-	*sampleRate		= gyroSampleRate;
-	*scaleRange		= gyroScaleRange;
-}
-
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	åŠ é€Ÿåº¦äº‹ä»¶å¤„ç†
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	0x00:æˆåŠŸ
-// 				0xff:å¤±è´¥
-//**********************************************************************
-uint16 Mid_Gyro_EventProcess(gyro_event_s* msg)
-{
-	switch(msg->id)
-	{
-		case GYRO_SLEEP:
-		GyroSleep();
-		break;
-
-		case GYRO_HARDWARE_SET:
-		GyroHardwareSet(msg->rate, msg->scaleRange);
-		break;
-
-		case GYRO_READ_PROCESS:
-		GyroReadProcess();
-		break;
-
-		case GYRO_READ_SET:
-		GyroReadSet(msg->readId, msg->rate,
-						msg->scaleRange, msg->Cb);
-		break;
-
-		case GYRO_READ_DELETE:
-		GyroReadDelete(*msg->readId);
-		break;
-
-		default:
-		return 0xff;
-	}
-	return 0x00;
-}
-
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½ï¼š	ä¼ æ„Ÿå™¨è‡ªæ£€,è°ƒç”¨è¯¥å‡½æ•°æ—¶ï¼Œç¡®ä¿è¯¥èµ„æºæœªä½¿ç”¨
-// è¾“å…¥å‚æ•°ï¼š	æ— 
-// è¿”å›å‚æ•°ï¼š	0x00:æˆåŠŸ
-// 				0xff:å¤±è´¥
+// º¯Êı¹¦ÄÜ£º	´«¸ĞÆ÷×Ô¼ì,µ÷ÓÃ¸Ãº¯ÊıÊ±£¬È·±£¸Ã×ÊÔ´Î´Ê¹ÓÃ
+// ÊäÈë²ÎÊı£º	ÎŞ
+// ·µ»Ø²ÎÊı£º	0x00:³É¹¦
+// 				0xff:Ê§°Ü
 //**********************************************************************
 uint16 Mid_Gyro_SelfTest(void)
 {
 	return Drv_Gyro_SelfTest();
 }
+
+// ***********************************************************************
+//	ÒÔÏÂÊÇÈÎÎñµ÷¶È´úÂë
+// ***********************************************************************
+// ²ÉÑù¶¨Ê±Æ÷»Øµ÷º¯Êı
+#if 0
+static void Gyro_TimerCallback(TimerHandle_t xTimer)
+{
+	 // ·¢ËÍÈÎÎñĞÅºÅÁ¿£¬Í¨ÖªTask¿É¶ÁÈ¡ĞÂµÄÊı¾İ
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	vTaskNotifyGiveFromISR(Gyro_TaskHandle, &xHigherPriorityTaskWoken);
+
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);	
+}
+
+static void GyroTask_Process(void *pvParameters)
+{	
+	// ´´½¨²ÉÑù¶¨Ê±Æ÷
+    Gyro_TimerHandle=xTimerCreate(
+					(const char*		)"Gyro_TimerHandle",
+					(TickType_t			)(Gyro_TimerPeriod),
+					(UBaseType_t		)pdTRUE,
+					(void*				)Gyro_TimerID,
+					(TimerCallbackFunction_t)Gyro_TimerCallback); //ÖÜÆÚ¶¨Ê±Æ÷£¬ÖÜÆÚ1s(1000¸öÊ±ÖÓ½ÚÅÄ)£¬ÖÜÆÚÄ£Ê½	
+	if(Gyro_TimerHandle == NULL)
+	{
+		MID_GYRO_RTT_printf(0,"Gyro_Timer Create Err \r\n");
+	}	
+					
+	while(1)
+	{
+		// µÈ´ıÈÎÎñĞÅºÅÁ¿
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);			
+		
+		// ¶ÁÈ¡×îĞÂÊı¾İ£¬µÈ´ı´¦Àí
+		Drv_Gyro_Read(MID_GYRO.LatestData);
+
+		MID_GYRO_RTT_printf(0,"Gyro: %d, %d, %d \r\n",MID_GYRO.LatestData[0],MID_GYRO.LatestData[1],MID_GYRO.LatestData[2]);
+		
+	}
+}
+
+void GyroTask_Create(void)
+{
+    if(pdPASS != xTaskCreate(GyroTask_Process, "GyroTask", TASK_STACKDEPTH_GYRO, NULL, TASK_PRIORITY_GYRO, &Gyro_TaskHandle))
+	{
+		MID_GYRO_RTT_printf(0,"GyroTask_Create Err \r\n");
+	}
+}
+#endif
+
+
+
 

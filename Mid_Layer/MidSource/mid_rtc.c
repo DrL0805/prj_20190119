@@ -1,16 +1,18 @@
 /**********************************************************************
 **
-**æ¨¡å—è¯´æ˜: midå±‚RTCæ¥å£
-**è½¯ä»¶ç‰ˆæœ¬ï¼Œä¿®æ”¹æ—¥å¿—(æ—¶é—´ï¼Œå†…å®¹),ä¿®æ”¹äºº:
-**   V1.0   2018.4.24  ä¿®æ”¹æµç¨‹  ZSL  
+**Ä£¿éËµÃ÷: mid²ãRTC½Ó¿Ú
+**Èí¼ş°æ±¾£¬ĞŞ¸ÄÈÕÖ¾(Ê±¼ä£¬ÄÚÈİ),ĞŞ¸ÄÈË:
+**   V1.0   2018.4.24  ĞŞ¸ÄÁ÷³Ì  ZSL  
 **
 **********************************************************************/
 #include "sm_timer.h"
 #include "mid_rtc.h"
 
-// 2000å¹´-2099å¹´çš„é—°å¹´æ ‡è®°ä¸ç¬¬ä¸€å¤©çš„æ˜ŸæœŸ
-//ä½7ä½ï¼šè¡¨ç¤ºæ¯å¹´ç¬¬ä¸€å¤©å¯¹åº”çš„æ˜ŸæœŸ
-//ç¬¬8ä½ï¼š1ä½é—°å¹´ï¼Œ0ä½å¹³å¹´
+//#include "mod_time.h"
+
+// 2000Äê-2099ÄêµÄÈòÄê±ê¼ÇÓëµÚÒ»ÌìµÄĞÇÆÚ
+//µÍ7Î»£º±íÊ¾Ã¿ÄêµÚÒ»Ìì¶ÔÓ¦µÄĞÇÆÚ
+//µÚ8Î»£º1Î»ÈòÄê£¬0Î»Æ½Äê
 static const uint8 Table_YearFirstDay[] =
 {
     0x0e,0x01,0x02,0x03,0x0c,0x06,0x00,0x01,0x0a,0x04,
@@ -46,23 +48,23 @@ static const uint32 Table_YearFirstDayUTC[101] =
     4102444800,
 };
 
-//æ—¶é—´å˜é‡ï¼Œä¿å­˜å¹´æœˆæ—¥ï¼Œæ—¶åˆ†ç§’ä»¥åŠæ˜ŸæœŸå‡ 
+//Ê±¼ä±äÁ¿£¬±£´æÄêÔÂÈÕ£¬Ê±·ÖÃëÒÔ¼°ĞÇÆÚ¼¸
 static rtc_time_s  rtcTime;
-//åŠç§’è®¡æ•°
+//°ëÃë¼ÆÊı
 static uint8  HalfSecCnt = 0;
-//RTC å›è°ƒå‡½æ•°
-static mid_rtc_msg pRtc_Msg = NULL; 
+//RTC »Øµ÷º¯Êı
 
+static Mid_RTC_Param_t		Mid_RTC;
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: æ ¹æ®å¹´æœˆæ—¥ï¼Œè®¡ç®—å½“å‰æ—¥æœŸæ˜¯æ˜ŸæœŸå‡ 
-//    è¾“å…¥å¹´æœˆæ—¥ï¼Œä½¿ç”¨æŸ¥è¡¨æ³•ï¼Œè®¡ç®—å‡ºæ˜¯æ˜ŸæœŸå‡ ã€‚æ—¥æœŸçš„æœ‰æ•ˆèŒƒå›´ä¸º2000/1/1åˆ°2099/12/30
-// è¾“å…¥å‚æ•°ï¼š   
-//    LocalYearï¼šå®é™…å¹´ä»½ - 2000ï¼ˆLocalYear çš„æœ‰æ•ˆèŒƒå›´ä¸º0-99ï¼‰
-//    LocalMonth:æœˆä»½           ï¼ˆLocalMonthçš„æœ‰æ•ˆèŒƒå›´ä¸º1-12ï¼‰
-//    LocalDay:æ—¥               ï¼ˆLocalDay  çš„æœ‰æ•ˆèŒƒå›´ä¸º1-31ï¼‰
-// è¿”å›å‚æ•°ï¼š    
-// Intervaldays: æ˜ŸæœŸå‡ 
+// º¯Êı¹¦ÄÜ: ¸ù¾İÄêÔÂÈÕ£¬¼ÆËãµ±Ç°ÈÕÆÚÊÇĞÇÆÚ¼¸
+//    ÊäÈëÄêÔÂÈÕ£¬Ê¹ÓÃ²é±í·¨£¬¼ÆËã³öÊÇĞÇÆÚ¼¸¡£ÈÕÆÚµÄÓĞĞ§·¶Î§Îª2000/1/1µ½2099/12/30
+// ÊäÈë²ÎÊı£º   
+//    LocalYear£ºÊµ¼ÊÄê·İ - 2000£¨LocalYear µÄÓĞĞ§·¶Î§Îª0-99£©
+//    LocalMonth:ÔÂ·İ           £¨LocalMonthµÄÓĞĞ§·¶Î§Îª1-12£©
+//    LocalDay:ÈÕ               £¨LocalDay  µÄÓĞĞ§·¶Î§Îª1-31£©
+// ·µ»Ø²ÎÊı£º    
+// Intervaldays: ĞÇÆÚ¼¸
 //**********************************************************************
 uint16 AutoWeek(uint16 LocalYear,uint8 LocalMonth,uint8 LocalDay)
 {
@@ -79,36 +81,33 @@ uint16 AutoWeek(uint16 LocalYear,uint8 LocalMonth,uint8 LocalDay)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: æ¯ç§’æ‰§è¡Œä¸€æ¬¡å½“å‰å‡½æ•°ï¼Œç”Ÿæˆå¯¹åº”çš„æ—¶åˆ†ç§’ï¼Œå¹´æœˆæ—¥ä»¥åŠæ˜ŸæœŸ
-//          å¹´ä»½æœ‰æ•ˆèŒƒå›´ä¸ºï¼š0-99å¹´
-// è¾“å…¥å‚æ•°ï¼š   
-//        æ— 
-// è¿”å›å‚æ•°ï¼š    
-//        æ— 
+// º¯Êı¹¦ÄÜ: Ã¿ÃëÖ´ĞĞÒ»´Îµ±Ç°º¯Êı£¬Éú³É¶ÔÓ¦µÄÊ±·ÖÃë£¬ÄêÔÂÈÕÒÔ¼°ĞÇÆÚ
+//          Äê·İÓĞĞ§·¶Î§Îª£º0-99Äê
+// ÊäÈë²ÎÊı£º   
+//        ÎŞ
+// ·µ»Ø²ÎÊı£º    
+//        ÎŞ
 //**********************************************************************
-static void RtcSecPeriodProcess(void)
+eMidRTCMsg RtcSecPeriodProcess(void)
 {
+	eMidRTCMsg tRetVal = eMidRTCMsgSec;
 	rtcTime.sec ++;
 	if(rtcTime.sec > 59)   //every min
 	{
+		tRetVal = eMidRTCMsgMin;
+		
 		rtcTime.min ++;
 		rtcTime.sec = 0;
-        if(pRtc_Msg != NULL)
-        {
-            (pRtc_Msg)(RTC_MIN_MSG);
-        }
 		if(rtcTime.min > 59)   //every Hour
 		{
 			rtcTime.min = 0;
 			rtcTime.hour ++;
 			if(rtcTime.hour > 23)  //every Day
 			{
+				tRetVal = eMidRTCMsgDay;
+				
 				rtcTime.hour = 0;
 				rtcTime.day ++;
-                if(pRtc_Msg != NULL)
-                {
-                    (pRtc_Msg)(RTC_DAY_MSG);
-                }
 				if(rtcTime.day > MonthDay(rtcTime.year, rtcTime.month))  //every Month
 				{
 					rtcTime.day = 1;
@@ -127,32 +126,33 @@ static void RtcSecPeriodProcess(void)
             }
         }
     }
+	
+	return tRetVal;
 }
 
-//RTCä¸­æ–­å›è°ƒå‡½æ•°
+//RTCÖĞ¶Ï»Øµ÷º¯Êı
 void Mid_Rtc_Isr(void)
 {
-	HalfSecCnt++;
-	if(HalfSecCnt > 1)
-	{
-		HalfSecCnt	= 0;
-		RtcSecPeriodProcess();
-        if(pRtc_Msg != NULL)
-        {
-            (pRtc_Msg)(RTC_SEC_MSG);
-        }
-	}
-    if(pRtc_Msg != NULL)
-    {
-        (pRtc_Msg)(RTC_HALFSEC_MSG);
-    }
+//	Mod_Time_TaskMsg_T TimeMsg;
+//	
+//	TimeMsg.Id = eTimeTaskMsgRTC;
+//	TimeMsg.Param.RTC.Msg = eMidRTCMsgHalfSec;
+//	
+//	if(Mid_RTC.HalfSecCnt++ > 0)
+//	{
+//		Mid_RTC.HalfSecCnt = 0;
+//		
+//		TimeMsg.Param.RTC.Msg = RtcSecPeriodProcess();
+//	}
+
+//	Mod_Time_TaskEventSet(&TimeMsg, 1);	
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: RTCåˆå§‹åŒ–
-//       RTCç¡¬ä»¶åˆå§‹åŒ–ï¼Œæ³¨å†Œä¸­æ–­å›è°ƒå‡½æ•°ï¼Œå¹¶åˆå§‹åŒ–æ—¶é—´ç»“æ„ä½“å˜é‡
-// è¾“å…¥å‚æ•°ï¼š æ— 
-// è¿”å›å‚æ•°ï¼šæ— 
+// º¯Êı¹¦ÄÜ: RTC³õÊ¼»¯
+//       RTCÓ²¼ş³õÊ¼»¯£¬×¢²áÖĞ¶Ï»Øµ÷º¯Êı£¬²¢³õÊ¼»¯Ê±¼ä½á¹¹Ìå±äÁ¿
+// ÊäÈë²ÎÊı£º ÎŞ
+// ·µ»Ø²ÎÊı£ºÎŞ
 //**********************************************************************
 void Mid_Rtc_Init(void)
 {
@@ -164,9 +164,6 @@ void Mid_Rtc_Init(void)
     //open a ctimer for RTC
     SMDrv_CTimer_Open(RTC_CTIMER_MODULE,127,Mid_Rtc_Isr);
 
-    //init param
-    pRtc_Msg = NULL;
-	HalfSecCnt		= 1;
 	rtcTime.year  	= 0;
 	rtcTime.month	= 1;
 	rtcTime.day		= 1;
@@ -174,26 +171,14 @@ void Mid_Rtc_Init(void)
 	rtcTime.min		= 0;
 	rtcTime.sec		= 0;
 	rtcTime.zone    = 0x0800;
-	rtcTime.week 	= SAT;
+	rtcTime.week 	= eMidRTCWeekSAT;
 	hasInit			= 1;
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: è®¾ç½®RTC callback
-// è¾“å…¥å‚æ•°ï¼šrtc_cb: callback
-// è¿”å›å‚æ•°ï¼šæ— 
-//**********************************************************************
-void Mid_Rtc_SetCallBack(mid_rtc_msg rtc_cb)
-{
-    if(rtc_cb == NULL)
-        return ;   
-    pRtc_Msg = rtc_cb;
-}
-
-//**********************************************************************
-// å‡½æ•°åŠŸèƒ½: å¯åŠ¨Rtc timer
-// è¾“å…¥å‚æ•°ï¼šæ— 
-// è¿”å›å‚æ•°ï¼šæ— 
+// º¯Êı¹¦ÄÜ: Æô¶¯Rtc timer
+// ÊäÈë²ÎÊı£ºÎŞ
+// ·µ»Ø²ÎÊı£ºÎŞ
 //**********************************************************************
 void Mid_Rtc_Start(void)
 {
@@ -201,9 +186,9 @@ void Mid_Rtc_Start(void)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: åœæ­¢Rtc timer
-// è¾“å…¥å‚æ•°ï¼šæ—   
-// è¿”å›å‚æ•°ï¼šæ—   
+// º¯Êı¹¦ÄÜ: Í£Ö¹Rtc timer
+// ÊäÈë²ÎÊı£ºÎŞ  
+// ·µ»Ø²ÎÊı£ºÎŞ  
 //**********************************************************************
 void Mid_Rtc_Stop(void)
 {
@@ -211,9 +196,9 @@ void Mid_Rtc_Stop(void)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: è¯»å–å½“å‰RTCæ—¶é—´, æŠŠå½“å‰çš„æ—¶é—´ä¿å­˜åˆ°æ—¶é—´ç»“æ„ä½“ä¸­
-// è¾“å…¥å‚æ•°ï¼šè¾“å…¥çš„æ—¶é—´ç»“æ„ä½“å˜é‡ï¼Œä¿å­˜å½“å‰æ—¶é—´
-// è¿”å›å‚æ•°ï¼šæ— 
+// º¯Êı¹¦ÄÜ: ¶ÁÈ¡µ±Ç°RTCÊ±¼ä, °Ñµ±Ç°µÄÊ±¼ä±£´æµ½Ê±¼ä½á¹¹ÌåÖĞ
+// ÊäÈë²ÎÊı£ºÊäÈëµÄÊ±¼ä½á¹¹Ìå±äÁ¿£¬±£´æµ±Ç°Ê±¼ä
+// ·µ»Ø²ÎÊı£ºÎŞ
 //**********************************************************************
 void Mid_Rtc_TimeRead(rtc_time_s *timeTemp)
 {
@@ -228,9 +213,9 @@ void Mid_Rtc_TimeRead(rtc_time_s *timeTemp)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: è®¾ç½®RTCæ—¶é—´,   è®¾ç½®ç³»ç»Ÿæ—¶é—´
-// è¾“å…¥å‚æ•°ï¼šè¾“å…¥çš„æ—¶é—´ç»“æ„ä½“å˜é‡ï¼Œç³»ç»Ÿæ—¶é—´å‚æ•°
-// è¿”å›å‚æ•°ï¼šæ— 
+// º¯Êı¹¦ÄÜ: ÉèÖÃRTCÊ±¼ä,   ÉèÖÃÏµÍ³Ê±¼ä
+// ÊäÈë²ÎÊı£ºÊäÈëµÄÊ±¼ä½á¹¹Ìå±äÁ¿£¬ÏµÍ³Ê±¼ä²ÎÊı
+// ·µ»Ø²ÎÊı£ºÎŞ
 //**********************************************************************
 void Mid_Rtc_TimeWrite(rtc_time_s *timeTemp)
 {
@@ -258,13 +243,13 @@ void Mid_Rtc_TimeWrite(rtc_time_s *timeTemp)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: æ ¹æ®å¹´ä»½å’Œæœˆä»½ï¼ŒæŸ¥è¯¢æœˆä»½å¯¹åº”çš„å¤©æ•°
-// è¾“å…¥å‚æ•°ï¼š   
-//        year_1ï¼šå¹´ä»½
-//        month_1:æœˆä»½
-// è¿”å›å‚æ•°ï¼š    
-//        0xff:æŸ¥è¯¢å¤±è´¥
-//        å…¶ä»–å€¼ï¼šè¿”å›æœˆä»½çš„å¤©æ•°
+// º¯Êı¹¦ÄÜ: ¸ù¾İÄê·İºÍÔÂ·İ£¬²éÑ¯ÔÂ·İ¶ÔÓ¦µÄÌìÊı
+// ÊäÈë²ÎÊı£º   
+//        year_1£ºÄê·İ
+//        month_1:ÔÂ·İ
+// ·µ»Ø²ÎÊı£º    
+//        0xff:²éÑ¯Ê§°Ü
+//        ÆäËûÖµ£º·µ»ØÔÂ·İµÄÌìÊı
 //**********************************************************************
 uint8 MonthDay(uint16 year_1, uint8 month_1)
 {
@@ -323,11 +308,11 @@ uint8 MonthDay(uint16 year_1, uint8 month_1)
 
 // ******************************************************************************
 // *Funtion name:TimeTransformUtc
-// *Description :å°†æ—¶é—´è½¬æ¢ä¸ºUTCæ—¶é—´ï¼Œä¸è€ƒè™‘æ—¶åŒº
+// *Description :½«Ê±¼ä×ª»»ÎªUTCÊ±¼ä£¬²»¿¼ÂÇÊ±Çø
 // *
-// *Input: å½“å‰æ—¶é—´ä¿¡æ¯,ä¸éœ€è¦æ—¶åŒºä¿¡æ¯
-// *Output:	0x00:	è½¬æ¢æˆåŠŸ
-// 			0xff:	è½¬æ¢å¤±è´¥
+// *Input: µ±Ç°Ê±¼äĞÅÏ¢,²»ĞèÒªÊ±ÇøĞÅÏ¢
+// *Output:	0x00:	×ª»»³É¹¦
+// 			0xff:	×ª»»Ê§°Ü
 // /*****************************************************************************
 uint16 TimeTransformUtc(rtc_time_s *timeTemp, uint32 *utcTemp)
 {
@@ -337,12 +322,12 @@ uint16 TimeTransformUtc(rtc_time_s *timeTemp, uint32 *utcTemp)
 	
 	CurdayCnt		= Table_Monthdyas[timeTemp->month];
 
-	// é—°å¹´ä¸”å¤§äº2æœˆå¤šåŠ ä¸€å¤©
+	// ÈòÄêÇÒ´óÓÚ2ÔÂ¶à¼ÓÒ»Ìì
 	if((timeTemp->month > 2) && (Table_YearFirstDay[timeTemp->year] & 0x08))
 		CurdayCnt++;
 	CurdayCnt		+= timeTemp->day - 1;
 
-    // å½“å‰æ—¶åŒºçš„UTCæ—¶é—´
+    // µ±Ç°Ê±ÇøµÄUTCÊ±¼ä
     utcTemp2			= utcTemp2 + (uint32)CurdayCnt * 86400 
 						+ ((uint32)timeTemp->hour*60 + (uint32)timeTemp->min)*60 + timeTemp->sec;
 
@@ -352,10 +337,10 @@ uint16 TimeTransformUtc(rtc_time_s *timeTemp, uint32 *utcTemp)
 
 // ******************************************************************************
 // *Funtion name:UtcTransformTime
-// *Description :å°†UTCæ—¶é—´è½¬æ¢ä¸º
+// *Description :½«UTCÊ±¼ä×ª»»Îª
 // *
-// *Input: å½“å‰æ—¶é—´ä¿¡æ¯ï¼ŒåŒ…å«æ—¶åŒº
-// *Output:è¿”å›0æ—¶åŒºçš„UTCæ—¶é—´
+// *Input: µ±Ç°Ê±¼äĞÅÏ¢£¬°üº¬Ê±Çø
+// *Output:·µ»Ø0Ê±ÇøµÄUTCÊ±¼ä
 // /*****************************************************************************
 uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 {
@@ -367,7 +352,7 @@ uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 	
 	flagTemp	= 0;
 
-	// ä»2001å¹´å¼€å§‹åˆ¤æ–­
+	// ´Ó2001Äê¿ªÊ¼ÅĞ¶Ï
 	for(i = 1; i <= 100; i++)
 	{
 		if(utcTemp < Table_YearFirstDayUTC[i])
@@ -379,23 +364,23 @@ uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 	if(i == 101)
 		return 0xff;
 
-	// æ•´æ•°å¤©æ•°
+	// ÕûÊıÌìÊı
 	dayCntTemp	= (utcTemp - Table_YearFirstDayUTC[timeTemp->year]) / 86400;
 
-	// åˆ¤æ–­æ˜¯å¦å¤§äº2æœˆ28æ—¥
+	// ÅĞ¶ÏÊÇ·ñ´óÓÚ2ÔÂ28ÈÕ
 	if(dayCntTemp >= 59)
 	{
-		// åˆ¤æ–­æ˜¯å¦é—°å¹´
+		// ÅĞ¶ÏÊÇ·ñÈòÄê
 		if(Table_YearFirstDay[timeTemp->year] & 0x08)
 		{
-			// å‡å»é—°æœˆå¤šå‡ºæ¥çš„ä¸€å¤©
+			// ¼õÈ¥ÈòÔÂ¶à³öÀ´µÄÒ»Ìì
 			dayCntTemp--;
 			flagTemp	= 1;
 		}
 
 	}
 
-	// ä»1æœˆå¼€å§‹æŸ¥æ‰¾æœˆä»½
+	// ´Ó1ÔÂ¿ªÊ¼²éÕÒÔÂ·İ
 	for(i = 2; i <= 13; i++)
 	{
 		if(dayCntTemp < Table_Monthdyas[i])
@@ -411,11 +396,11 @@ uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 		}
 	}	
 
-	// å½“å¤©å‰©ä½™çš„ç§’
+	// µ±ÌìÊ£ÓàµÄÃë
 	utcTemp				= utcTemp % 86400;
 	timeTemp->hour		= utcTemp / 3600;
 
-	#if 0	//ä¸time to UTCå¯¹åº”ï¼Œä¸åŠ æ—¶åŒº
+	#if 0	//Óëtime to UTC¶ÔÓ¦£¬²»¼ÓÊ±Çø
 	if (rtcTime.zone & 0x8000)
 	{
 
@@ -427,7 +412,7 @@ uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 	}
 	#endif
 
-	// å½“å‰å°æ—¶å‰©ä½™çš„ç§’
+	// µ±Ç°Ğ¡Ê±Ê£ÓàµÄÃë
 	utcTemp				= utcTemp % 3600;
 	timeTemp->min		= utcTemp / 60;
 	timeTemp->sec		= utcTemp % 60;
@@ -437,12 +422,12 @@ uint16 UtcTransformTime(uint32 utcTemp, rtc_time_s *timeTemp)
 
 // ******************************************************************************
 // *Funtion name:TimeZoneTransform
-// *Description :æ ¹æ®è¾“å…¥curtimeä¿¡æ¯ï¼Œè½¬æ¢ä¸ºç›®æ ‡æ—¶åŒºæ—¶é—´
+// *Description :¸ù¾İÊäÈëcurtimeĞÅÏ¢£¬×ª»»ÎªÄ¿±êÊ±ÇøÊ±¼ä
 // *
-// *Input:	curTimeï¼šå½“å‰æ—¶é—´ï¼Œéœ€è¦è¾“å…¥æ­£ç¡®çš„å½“å‰æ—¶é—´ä¸æ—¶åŒº
-// *		aimTimeï¼šéœ€è¾“å…¥ç›®æ ‡æ—¶åŒºï¼Œå…¶ä»–æ—¶é—´ä¿¡æ¯ä¸éœ€è¦è¾“å…¥ï¼Œ
-// *Output:	0x00:	è½¬æ¢æˆåŠŸ
-// *		0xff:	è½¬æ¢å¤±è´¥
+// *Input:	curTime£ºµ±Ç°Ê±¼ä£¬ĞèÒªÊäÈëÕıÈ·µÄµ±Ç°Ê±¼äÓëÊ±Çø
+// *		aimTime£ºĞèÊäÈëÄ¿±êÊ±Çø£¬ÆäËûÊ±¼äĞÅÏ¢²»ĞèÒªÊäÈë£¬
+// *Output:	0x00:	×ª»»³É¹¦
+// *		0xff:	×ª»»Ê§°Ü
 // /*****************************************************************************
 uint16 TimeZoneTransform(rtc_time_s *curTime, rtc_time_s *aimTime)
 {
@@ -450,10 +435,10 @@ uint16 TimeZoneTransform(rtc_time_s *curTime, rtc_time_s *aimTime)
 	int8		curZoneIntTemp, aimZoneIntTemp, zoneIntTemp;
 	uint8		curZoneFractionTemp, aimZoneFractionTemp, zoneFractionTemp;
 	uint8		curZoneLargeThanaimZone;
-	// å°†æ—¶é—´è½¬æ¢ä¸ºUTC
+	// ½«Ê±¼ä×ª»»ÎªUTC
 	if(TimeTransformUtc(curTime, &utcTemp) == 0xff)
 		return 0xff;
-	// å°†æ—¶åŒºèŒƒå›´ç”±ï¼ˆ-12--+12ï¼‰è½¬æ¢ä¸ºï¼ˆ0--24ï¼‰
+	// ½«Ê±Çø·¶Î§ÓÉ£¨-12--+12£©×ª»»Îª£¨0--24£©
 	curZoneIntTemp		= (int8)(curTime->zone >> 8) + 12;
 	aimZoneIntTemp		= (int8)(aimTime->zone >> 8) + 12;
 
@@ -526,7 +511,7 @@ uint16 TimeZoneTransform(rtc_time_s *curTime, rtc_time_s *aimTime)
 
 // ******************************************************************************
 // *Funtion name:Read_GMT_Utc
-// *Description :è¿”å›0æ—¶åŒºçš„UTCæ—¶é—´
+// *Description :·µ»Ø0Ê±ÇøµÄUTCÊ±¼ä
 // *
 // *Input: data
 // *Output:None
@@ -535,23 +520,23 @@ uint32 Read_GMT_Utc(void)
 {
 	rtc_time_s		timeTemp;
 	uint32		utcTemp;
-	// ç›®çš„æ—¶åŒºä¸ºé›¶æ—¶åŒº
+	// Ä¿µÄÊ±ÇøÎªÁãÊ±Çø
 	timeTemp.zone	= 0;
 
-	if(TimeZoneTransform(&rtcTime, &timeTemp) == 0xff)//å½“å‰æ—¶é—´è½¬æ¢æˆç›®æ ‡æ—¶åŒºæ—¶é—´
+	if(TimeZoneTransform(&rtcTime, &timeTemp) == 0xff)//µ±Ç°Ê±¼ä×ª»»³ÉÄ¿±êÊ±ÇøÊ±¼ä
 		return 0xff;
 
-	TimeTransformUtc(&timeTemp, &utcTemp);//å½“å‰æ—¶é—´è½¬æ¢æˆUTCæ—¶é—´
+	TimeTransformUtc(&timeTemp, &utcTemp);//µ±Ç°Ê±¼ä×ª»»³ÉUTCÊ±¼ä
 	return utcTemp;
 }
 
 // ******************************************************************************
 // *Funtion name:Read_Cur_Utc
-// *Description :è¿”å›å½“å‰æ—¶é—´çš„UTCæ—¶é—´
+// *Description :·µ»Øµ±Ç°Ê±¼äµÄUTCÊ±¼ä
 // *
 // *Input: none
-// *Output: 0 : è½¬æ¢å¤±è´¥
-// 			å…¶ä»–ï¼šUTCæ—¶é—´
+// *Output: 0 : ×ª»»Ê§°Ü
+// 			ÆäËû£ºUTCÊ±¼ä
 // /*****************************************************************************
 uint32 Mid_Rtc_ReadCurUtc(void)
 {
@@ -564,13 +549,13 @@ uint32 Mid_Rtc_ReadCurUtc(void)
 
 // ******************************************************************************
 // *Funtion name:TimePeriodJudge
-// *Description :åˆ¤æ–­åœ¨ä¸€å¤©å†…æ˜¯å¦åœ¨åˆ¶å®šçš„æ—¶é—´æ®µå†…
+// *Description :ÅĞ¶ÏÔÚÒ»ÌìÄÚÊÇ·ñÔÚÖÆ¶¨µÄÊ±¼ä¶ÎÄÚ
 // *
-// *Input:	startTime:	æ—¶é—´æ®µå¼€å§‹æ—¶åˆ»ï¼ŒåŒ…å«è¯¥æ—¶é—´ï¼Œå•ä½ä¸ºç§’
-// 			endTime:	æ—¶é—´æ®µç»“æŸæ—¶åˆ»ï¼ŒåŒ…å«è¯¥æ—¶é—´ï¼Œå•ä½ä¸ºç§’
-// 			inputTime:	è¾“å…¥çš„æ—¶åˆ»ï¼Œåˆ¤æ–­è¯¥æ—¶åˆ»æ˜¯å¦åœ¨æ—¶é—´æ®µå†…ï¼Œå•ä½ä¸ºç§’
-// *Output: 0 : ä¸åœ¨è¯¥æ—¶é—´æ®µå†…
-// 			1 : åœ¨è¯¥æ—¶é—´æ®µå†…
+// *Input:	startTime:	Ê±¼ä¶Î¿ªÊ¼Ê±¿Ì£¬°üº¬¸ÃÊ±¼ä£¬µ¥Î»ÎªÃë
+// 			endTime:	Ê±¼ä¶Î½áÊøÊ±¿Ì£¬°üº¬¸ÃÊ±¼ä£¬µ¥Î»ÎªÃë
+// 			inputTime:	ÊäÈëµÄÊ±¿Ì£¬ÅĞ¶Ï¸ÃÊ±¿ÌÊÇ·ñÔÚÊ±¼ä¶ÎÄÚ£¬µ¥Î»ÎªÃë
+// *Output: 0 : ²»ÔÚ¸ÃÊ±¼ä¶ÎÄÚ
+// 			1 : ÔÚ¸ÃÊ±¼ä¶ÎÄÚ
 // /*****************************************************************************
 uint16 TimePeriodJudge(uint32 startTime, uint32 endTime, uint32 inputTime)
 {
@@ -591,14 +576,14 @@ uint16 TimePeriodJudge(uint32 startTime, uint32 endTime, uint32 inputTime)
 }
 
 //**********************************************************************
-// å‡½æ•°åŠŸèƒ½: æ ¹æ®å¹´æœˆæ—¥ï¼Œè®¡ç®—å½“å‰æ—¥æœŸæ˜¯ä¸€å¹´ä¸­çš„ç¬¬å‡ å¤©
-//    è¾“å…¥å¹´æœˆæ—¥ï¼Œä½¿ç”¨æŸ¥è¡¨æ³•ï¼Œæ—¥æœŸçš„æœ‰æ•ˆèŒƒå›´ä¸º2000/1/1åˆ°2099/12/30
-// è¾“å…¥å‚æ•°ï¼š   
-//    LocalYearï¼šå®é™…å¹´ä»½ - 2000ï¼ˆLocalYear çš„æœ‰æ•ˆèŒƒå›´ä¸º0-99ï¼‰
-//    LocalMonth:æœˆä»½           ï¼ˆLocalMonthçš„æœ‰æ•ˆèŒƒå›´ä¸º1-12ï¼‰
-//    LocalDay:æ—¥               ï¼ˆLocalDay  çš„æœ‰æ•ˆèŒƒå›´ä¸º1-31ï¼‰
-// è¿”å›å‚æ•°ï¼š    
-// Intervaldays: ä¸€å¹´ä¸­çš„ç¬¬å‡ å¤©
+// º¯Êı¹¦ÄÜ: ¸ù¾İÄêÔÂÈÕ£¬¼ÆËãµ±Ç°ÈÕÆÚÊÇÒ»ÄêÖĞµÄµÚ¼¸Ìì
+//    ÊäÈëÄêÔÂÈÕ£¬Ê¹ÓÃ²é±í·¨£¬ÈÕÆÚµÄÓĞĞ§·¶Î§Îª2000/1/1µ½2099/12/30
+// ÊäÈë²ÎÊı£º   
+//    LocalYear£ºÊµ¼ÊÄê·İ - 2000£¨LocalYear µÄÓĞĞ§·¶Î§Îª0-99£©
+//    LocalMonth:ÔÂ·İ           £¨LocalMonthµÄÓĞĞ§·¶Î§Îª1-12£©
+//    LocalDay:ÈÕ               £¨LocalDay  µÄÓĞĞ§·¶Î§Îª1-31£©
+// ·µ»Ø²ÎÊı£º    
+// Intervaldays: Ò»ÄêÖĞµÄµÚ¼¸Ìì
 //**********************************************************************
 uint16 Mid_Rtc_AutoDay(uint8 LocalYear,uint8 LocalMonth,uint8 LocalDay)
 {

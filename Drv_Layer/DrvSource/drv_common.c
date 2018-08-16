@@ -8,7 +8,7 @@
 **
 **
 **********************************************************************/
-#define COMMON_MODULE
+
 #include "io_config.h"
 #include "sm_sys.h"
 #include "sm_gpio.h"

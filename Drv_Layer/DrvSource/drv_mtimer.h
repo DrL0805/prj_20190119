@@ -7,43 +7,62 @@
 
 #include "platform_common.h"
 
-#define MULTITIMER_NUM_MAX       8 //事件数量,根据需求而定。
+#define DRV_MTIMER_RTT_DEBUG	0
+#if (1 == DRV_MTIMER_RTT_DEBUG)	// 错误等级
+#define DRV_MTIMER_RTT_LOG(...)
+#define DRV_MTIMER_RTT_WARN(...)
+#define DRV_MTIMER_RTT_ERR		SEGGER_RTT_printf
+#elif (2 == DRV_MTIMER_RTT_DEBUG)	// 警告等级
+#define DRV_MTIMER_RTT_LOG(...)
+#define DRV_MTIMER_RTT_WARN	SEGGER_RTT_printf
+#define DRV_MTIMER_RTT_ERR		SEGGER_RTT_printf
+#elif (3 == DRV_MTIMER_RTT_DEBUG)	// 调试等级
+#define DRV_MTIMER_RTT_LOG		SEGGER_RTT_printf
+#define DRV_MTIMER_RTT_WARN	SEGGER_RTT_printf
+#define DRV_MTIMER_RTT_ERR		SEGGER_RTT_printf
+#else							// 调试关闭
+#define DRV_MTIMER_RTT_LOG(...)
+#define DRV_MTIMER_RTT_WARN(...)
+#define DRV_MTIMER_RTT_ERR(...)
+#endif
 
-// Setting Options
-typedef enum {
-	FREQ_1HZ   = 1,
-	FREQ_2HZ   = 2,
-	FREQ_25HZ  = 25,
-	FREQ_50HZ  = 50,
-	FREQ_100HZ = 100,
-	FREQ_200HZ = 200,
-}multiTimerFreq_Options;
+#define MULTITIMER_NUM_MAX       8  // 事件数量,根据需求而定。
+#define MULTITIMER_MIN_PERIOD	 5	// 最小周期，单位ms
 
-//**********************************************************************
-// 函数功能：   定时器初始化，并返回操作结果。
-// 输入参数：   void
-// 返回参数:
-//**********************************************************************
-extern void Drv_MultiTimer_Init(void);
+typedef enum
+{
+	eMTimerStateUninited,				// 未初始化
+	eMTimerStateInited,					// 已初始化
+	eMTimerStateRunning,				// 运行
+	eMTimerStateSuspend					// 暂停
+}eMTimerState;
 
-//**********************************************************************
-// 函数功能：	设置一个timer，并返回操作结果。
-// 输入参数：	id:		返回定时器ID
-// 				freq:	定时器设置频率
-// 				IsrCb:	回调函数
-// 返回参数：	0x00: 设置成功
-// 				0x01: 设置失败
-//              0x02: 参数非法
-//**********************************************************************
-extern uint8 Drv_MultiTimer_Set(uint16 *id, uint16 freq, void (*IsrCb)(void));
+typedef struct
+{
+	eMTimerState	State;
+	uint32_t	Period;			// 定期周期
+	uint32_t	AimTick;		// 目标tick数
+	uint32_t    CurrTick;		// 已运行的tick数
+	comm_cb		*IsrCb;			// 回调函数
+}MTimer_Param_t;
 
-//**********************************************************************
-// 函数功能：   删除一个timer，并返回操作结果。
-// 输入参数：   id:		定时器ID
-// 返回参数：	0x00:	设置成功
-// 				0x02:   参数非法
-//**********************************************************************
-extern uint8 Drv_MultiTimer_Delete(uint16 id);
+typedef struct
+{
+	uint32_t	MinPeriod;	// 所有定时器的最小周期
+	uint32_t	CreateCnt;		// 已创建的定时器数量
+	uint32_t 	RunningCnt;	// 正在运行定时器数量
+	MTimer_Param_t	MTimer[MULTITIMER_NUM_MAX];
+}Drv_MTimer_Param_t;
+
+
+extern void Drv_MTimer_Init(void);
+extern uint32_t Drv_MTimer_Create(uint32_t *Id, uint32_t Period, void (*IsrCb)(void));
+extern uint32_t Drv_MTimer_Start(uint32_t Id, uint32_t Period);
+extern uint32_t Drv_MTimer_Stop(uint32_t Id);
+
+#if DRV_MTIMER_RTT_DEBUG
+extern void Drv_MTimer_Test(void);
+#endif
 
 #endif
 

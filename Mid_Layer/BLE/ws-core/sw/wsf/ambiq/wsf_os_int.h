@@ -22,6 +22,8 @@
 #ifndef WSF_OS_INT_H
 #define WSF_OS_INT_H
 
+#include "wsf_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

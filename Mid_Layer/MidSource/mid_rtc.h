@@ -5,53 +5,55 @@
 
 typedef enum
 {
-    SUN     = 0,
-    MON,
-    TUE,
-    WED,
-    THU,
-    FRI,
-    SAT,
-}week_t;
+    eMidRTCWeekSUN     = 0,
+    eMidRTCWeekMON,
+    eMidRTCWeekTUE,
+    eMidRTCWeekWED,
+    eMidRTCWeekTHU,
+    eMidRTCWeekFRI,
+    eMidRTCWeekSAT,
+}eMidRTCWeek;
 
 typedef enum
 {
-    JAN     = 1,
-    FEB,
-    MAR,
-    APR,
-    MAY,
-    JUN,
-    JUL,
-    AUG,
-    SEP,
-    OCT,
-    NOV,
-    DEC,
-} month_t;
+    eMidRTCMonthJAN     = 1,
+    eMidRTCMonthFEB,
+    eMidRTCMonthMAR,
+    eMidRTCMonthAPR,
+    eMidRTCMonthMAY,
+    eMidRTCMonthJUN,
+    eMidRTCMonthJUL,
+    eMidRTCMonthAUG,
+    eMidRTCMonthSEP,
+    eMidRTCMonthOCT,
+    eMidRTCMonthNOV,
+    eMidRTCMonthDEC,
+} eMidRTCMonth;
+
+typedef struct
+{
+	uint8_t HalfSecCnt;
+}Mid_RTC_Param_t;
 
 typedef struct 
 {
-    uint8  year;
-    uint8  month;
-    uint8  day;
-    uint8  hour;
-    uint8  min;
-    uint8  sec;
-    uint8  week;
-    uint16 zone;
+    uint8  			year;
+    eMidRTCMonth  	month;
+    uint8  			day;
+    uint8  			hour;
+    uint8  			min;
+    uint8  			sec;
+    eMidRTCWeek  	week;
+    uint16 			zone;
 }rtc_time_s;
 
 typedef enum
 {
-    RTC_NONE_MSG,    //无效的消息
-    RTC_DAY_MSG,     //RTC一天时间计时完成消息
-    RTC_MIN_MSG,     //RTC每分钟计时完成消息
-    RTC_SEC_MSG,     //RTC每秒计时完成消息
-    RTC_HALFSEC_MSG, //相比RtcSecCbInit延时半秒，计时完成消息
-}MidRtc_Msg;
-
-typedef void (*mid_rtc_msg)(MidRtc_Msg msg);
+    eMidRTCMsgDay,     //RTC一天时间计时完成消息
+    eMidRTCMsgMin,     //RTC每分钟计时完成消息
+    eMidRTCMsgSec,     //RTC每秒计时完成消息
+    eMidRTCMsgHalfSec, //相比RtcSecCbInit延时半秒，计时完成消息
+}eMidRTCMsg;
 
 //**********************************************************************
 // 函数功能: RTC初始化
@@ -60,13 +62,7 @@ typedef void (*mid_rtc_msg)(MidRtc_Msg msg);
 // 返回参数：无
 //**********************************************************************
 extern void Mid_Rtc_Init(void);
-
-//**********************************************************************
-// 函数功能: 设置RTC callback
-// 输入参数：rtc_cb: callback
-// 返回参数：无
-//**********************************************************************
-extern void Mid_Rtc_SetCallBack(mid_rtc_msg rtc_cb);
+extern eMidRTCMsg RtcSecPeriodProcess(void);
 
 //**********************************************************************
 // 函数功能: 启动Rtc timer

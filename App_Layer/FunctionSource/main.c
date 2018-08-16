@@ -1,26 +1,34 @@
 #include "platform_common.h"
 #include "platform_debugcof.h"
 
-#include "mid_interface.h"
-#include "app_task.h"
-#include "drv_movt.h"
+#include "system_task.h"
 
 #include "mid_scheduler.h"
-
+#include "drv_touch.h"
 #include "module_test.h"
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
 
+#include "am_util_delay.h"
+
 static void Bsp_Init(void)
 {
-//	Mid_Schd_ParamInit();	// 共享互斥初始化放在前面
+	Mid_Schd_ParamInit();	// 共享互斥初始化放在前面
 	
-//	Drv_MTimer_Init();		// 放在初始化前面
+	Drv_MTimer_Init();		// 放在初始化前面
 
 	Mid_Key_Init();
-//	Mid_Motor_Init();
+	Mid_Motor_Init();
+//	while(1)
+//	{
+//		Mid_Motor_On();
+//		am_util_delay_ms(10);
+//		Mid_Motor_Off();
+//		am_util_delay_ms(10);
+//	}
 //	Mid_Magnetism_Init();
 //	Mid_Accel_Init();
+//	Mid_Accel_SelfTest();
 //	Mid_Gyro_Init();
 //	
 //	Drv_RGBLcd_Init();
@@ -41,9 +49,9 @@ static void Bsp_Init(void)
 //	Mid_Countdown_Init();	// 倒计时
 
 //	Mid_Font_Init();
-//	
-//	Drv_IT7259_Init();
-//	
+	
+	Drv_IT7259_Init();
+	
 //	Mid_NandFlash_Init();
 }
 
@@ -83,7 +91,7 @@ static void start_task(void *pvParameters)
 	vTaskDelete(NULL); 				//删除开始任务
 }
 
-#if 0
+#if 1
 int main(void)
 {
 	/* 系统初始化 */ 
@@ -96,7 +104,9 @@ int main(void)
 		因为有些外设初始化过程中用到OS相关函数
 		注：开始任务优先级必须最高
 	*/
-    xTaskCreate(start_task, "start_task", 1024, NULL, TASK_PRIORITY_START, NULL); 
+//    xTaskCreate(start_task, "start_task", 1024, NULL, TASK_PRIORITY_START, NULL); 
+	Bsp_Init();
+	Task_Init();
 	
 	SEGGER_RTT_printf(0,"Sys Init Suc \n");
    
@@ -108,7 +118,7 @@ int main(void)
 }
 #endif
 
-#if 1
+#if 0
 void App_Protocal_Init(void);
 
 int main(void)     //this case: for module test

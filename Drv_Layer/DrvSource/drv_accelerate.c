@@ -11,9 +11,9 @@
 #include "bsp_common.h"
 
 /*******************macro define*******************/
-#define BMI160_I2C_ADDR1                   (0x68 << 1)
+#define BMI160_I2C_ADDR2                   (0x68 << 1)	// SDO脚接GND
 /**< I2C Address needs to be changed */
-#define BMI160_I2C_ADDR2                    (0x69<< 1)
+#define BMI160_I2C_ADDR1                   (0x69<< 1) // SDO脚接VDD
 
 // #define     ACCEL_BUFFER_ENABLE                 0x01
 
@@ -278,7 +278,7 @@ static void Accel_RegisterRead(uint8 dev_address, uint8 reg_address, uint8 *regv
 //**********************************************************************
 // 函数功能:  重力传感器初始化
 // 输入参数： 无
-// 返回参数：    
+// 返回参数：
 // 0x00    :  初始化成功
 // 0xff    :  初始化失败
 //**********************************************************************
@@ -298,7 +298,7 @@ uint8 Drv_Accel_Open(void)
 
         /* Set the accel bandwidth as OSR4 */
         ui8Regtemp[0] = BMI160_ACCEL_OSR4_AVG1 << 4; //
-		    Accel_RegisterWrite(BMI160_I2C_ADDR1, BMI160_USER_ACCEL_CONFIG_ADDR, ui8Regtemp, 1);		     
+		Accel_RegisterWrite(BMI160_I2C_ADDR1, BMI160_USER_ACCEL_CONFIG_ADDR, ui8Regtemp, 1);		     
     }
 	 multisensor.accelstate = poweron;
 	
@@ -341,12 +341,14 @@ uint8 Drv_Accel_Close(void)
 uint8 Drv_Accel_Set(uint16 sampleRate, uint8 scaleRange)
 {
     uint8 ui8Regtemp[1] = {0x00};
-    
+	
     if (Drv_Accel_WakeUp())
     {
         return 0xff;
     }
 
+	Drv_Accel_Open();
+	
     //Disable accel xyz's selftest, set SacleRange.
 	ui8Regtemp[0] = 0x00;
     if(scaleRange != ACCEL_SCALERANGE_2G &&
@@ -396,6 +398,9 @@ uint8 Drv_Accel_Set(uint16 sampleRate, uint8 scaleRange)
         ui8Regtemp[0] = GYRO_MODE_SUSPEND; 
         Accel_RegisterWrite(BMI160_I2C_ADDR1, BMI160_CMD_COMMANDS_ADDR, ui8Regtemp, 1);
     }
+	
+	Drv_Accel_Close();
+	
     return 0x00;
 }
 
@@ -442,10 +447,14 @@ uint8  Drv_Accel_SetBuffer(uint16 setState)
 uint8 Drv_Accel_Read(int16 *axisData)
 {
     uint8 axisdata[6];
+	
+	Drv_Accel_Open();
     Accel_RegisterRead(BMI160_I2C_ADDR1, BMI160_USER_DATA_14_ADDR, axisdata, 6);
     axisData[0] = ((uint16)axisdata[1]<<8) + axisdata[0];
     axisData[1] = ((uint16)axisdata[3]<<8) + axisdata[2];
     axisData[2] = ((uint16)axisdata[5]<<8) + axisdata[4];
+	Drv_Accel_Close();
+	
     return 0x00;
 }
 
@@ -511,13 +520,16 @@ uint8 Drv_Accel_WakeUp(void)
 // 0xff    :    操作失败
 //**********************************************************************
 uint8 Drv_Accel_GoSleep(void)
-{
-    multisensor.accelstate = sleep;
+{    
     uint8 ui8Regtemp[1]= {0X00};
+
+	Drv_Accel_Open();
 
     ui8Regtemp[0] = ACCEL_SUSPEND;
     Accel_RegisterWrite(BMI160_I2C_ADDR1, BMI160_CMD_COMMANDS_ADDR, ui8Regtemp, 1);
 
+	multisensor.accelstate = sleep;
+	
 	Drv_Accel_Close();
 
     return 0x00;
@@ -545,16 +557,17 @@ uint8 Drv_Accel_Reset(void)
 //**********************************************************************
 uint8 Drv_Accel_SelfTest(void)
 {
-   uint8  data;
-
+	uint8  data;
+	
     Drv_Accel_Open();
     // Selftest
     Accel_RegisterRead(BMI160_I2C_ADDR1, BMI160_USER_CHIP_ID_ADDR,&data, 1);
+	Drv_Accel_GoSleep();
     Drv_Accel_Close();
-    if(data == 0x01)
+    if(data == 0xD1)
     {
         return 0x00;
-    }           
+    }
     else
     {
         return 0xff;

@@ -10,6 +10,10 @@
 **********************************************************************/
 #define IO_UNKNOW  0XFF
 
+#define KEY_MODULE
+#define COMMON_MODULE
+#define IIC_MODULE
+
 //GPIO
 #ifdef SWD_MODULE
 #define SWD_CK_PIN      20    //SWD debug pin

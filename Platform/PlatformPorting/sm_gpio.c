@@ -7,7 +7,7 @@
 **
 **********************************************************************/
 #define BAT_MODULE
-#define KEY_MODULE
+//#define KEY_MODULE
 #define HEART_RATE
 #ifdef AM_PART_APOLLO3
 #define FONT_MODULE

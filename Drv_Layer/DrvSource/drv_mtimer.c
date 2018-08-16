@@ -9,220 +9,233 @@
 #include "sm_timer.h"
 #include "drv_mtimer.h"
 
-typedef struct
+static Drv_MTimer_Param_t	DrvMTiemr;
+
+// 获取两个数的最大公约数
+static uint32_t Get_GCD(uint32_t a, uint32_t b)
 {
-    uint16	  freq;       // 设置的频率
-    uint16	  cnt;        // 计数值
-    uint16	  aimCnt;     // 目标计数值
-    comm_cb   *IsrCb;      //回调函数
-}multitimer_para_s;
-
-//用于记录最大的频率值。
-static uint16 maxFreqHz;
-
-static multitimer_para_s multiTimerPara[MULTITIMER_NUM_MAX];
-
-//定时器中断函数,放在am_ctimer_isr的B0中断里使用。
-void mutil_timer_isr(void)
-{
-    uint16 paraCnt;
-    for(paraCnt = 0;paraCnt < MULTITIMER_NUM_MAX; paraCnt++)//每个有效的MultiTimer的Cnt都增加1
-    {
-        if(multiTimerPara[paraCnt].freq != 0)
-        {
-            multiTimerPara[paraCnt].cnt++;
-            if(multiTimerPara[paraCnt].cnt >= multiTimerPara[paraCnt].aimCnt)
-            {
-                if(multiTimerPara[paraCnt].IsrCb != NULL)
-                {
-                    multiTimerPara[paraCnt].IsrCb();
-                }
-                multiTimerPara[paraCnt].cnt = 0;
-            }
-        }
+    uint32_t r;
+    while (b != 0)
+	{
+        r = a % b; 
+		a = b; 
+		b = r;
     }
+    return a;
+}
+
+void Drv_MTimer_IsrCb(void)
+{
+	DRV_MTIMER_RTT_LOG(0,"Drv_MTimer_IsrCb \n");
+	
+	for(uint32_t i = 0;i < DrvMTiemr.CreateCnt;i++)
+	{
+		if(eMTimerStateRunning == DrvMTiemr.MTimer[i].State)
+		{
+			if(++DrvMTiemr.MTimer[i].CurrTick >= DrvMTiemr.MTimer[i].AimTick)
+			{
+				if(NULL != DrvMTiemr.MTimer[i].IsrCb)
+				{
+					DrvMTiemr.MTimer[i].CurrTick = 0;
+					DrvMTiemr.MTimer[i].IsrCb();
+				}
+			}	
+		}
+	}
 }
 
 //**********************************************************************
-// 函数功能：   配置硬件定时器频率。
-// 输入参数：   freq:	设置硬件定时器频率,最高频率不超过1000
-// 返回参数：	0x00:操作成功
-// 				0x2:操作失败
-//**********************************************************************
-static uint8 MultiTimer_Open(uint16 freq)
-{
-    if(freq > 1000)
-    {   
-        return Ret_InvalidParam;
-    }
- 
-    return SMDrv_CTimer_Open(MULTI_CTIMER_MODULE,freq,mutil_timer_isr);
-}
-
-//**********************************************************************
-// 函数功能：   定时器初始化，并返回操作结果。
+// 函数功能：   定时器初始化，所有参数清零
 // 输入参数：   void
 // 返回参数:
-//**********************************************************************
-void Drv_MultiTimer_Init(void)
+void Drv_MTimer_Init(void)
 {
-    memset(multiTimerPara,0x00,sizeof(multiTimerPara));
-    maxFreqHz = 0;
+	memset(&DrvMTiemr, 0x00, sizeof(Drv_MTimer_Param_t));
 }
 
 //**********************************************************************
-// 函数功能：	设置一个timer，并返回操作结果。
-// 输入参数：	id:		返回定时器ID
-// 				freq:	定时器设置频率
-// 				IsrCb:	回调函数
-// 返回参数：	0x00: 设置成功
-// 				0x01: 设置失败
-//              0x02: 参数非法
-//**********************************************************************
-uint8 Drv_MultiTimer_Set(uint16 *id, uint16 freq, void (*IsrCb)(void))
+// 函数功能：   创建定时器，并返回定时器Id
+// 输入参数：   id 返回的定期id
+// 				Period 周期，此参数不可少，用于计算最大公约数
+//				IsrCb 定时器回调函数
+// 返回参数:	
+uint32_t Drv_MTimer_Create(uint32_t *Id, uint32_t Period, void (*IsrCb)(void))
 {
-    uint16 i;
-    uint16	idTemp = 0, maxFreqHzTemp = 0;
+	if(DrvMTiemr.CreateCnt >= MULTITIMER_NUM_MAX)	return Ret_NoDevice;
+	
+	DrvMTiemr.MTimer[DrvMTiemr.CreateCnt].IsrCb = IsrCb;
+	DrvMTiemr.MTimer[DrvMTiemr.CreateCnt].Period = Period;
+	DrvMTiemr.MTimer[DrvMTiemr.CreateCnt].State = eMTimerStateInited;
+	
+	*Id = DrvMTiemr.CreateCnt;
+	DrvMTiemr.CreateCnt++;
+	
+	return Ret_OK;
+}
 
-    if((freq == 0) || (freq > 1000)) //如果频率为0Hz或大于1000HZ，则设置失败。
-    {
-        return Ret_InvalidParam;
-    }
-
-    for(i = 0; i < MULTITIMER_NUM_MAX; i++)
-    {
-        if(multiTimerPara[i].freq == 0)
-        {
-            idTemp	= i;
-            *id	= idTemp;
-            break;
-        }
-    }
-
-    // 所有定时器均已分配完了
-    if(i == MULTITIMER_NUM_MAX)
-        return Ret_Fail;
-
+//**********************************************************************
+// 函数功能：   开始定时器
+// 输入参数：   id 定时器Id
+//				Period 定时器运行周期
+// 返回参数:
+uint32_t Drv_MTimer_Start(uint32_t Id, uint32_t Period)
+{
+	uint32_t tGCDPeriod;		// 最大公约数
+	uint32_t tOldPeriod;		// 保存原来运行周期	
+	
+	// Id 有效性校验
+	if(Id >= DrvMTiemr.CreateCnt)	return Ret_NoDevice;
+	
+	// 定时器周期不为0且是MULTITIMER_MIN_PERIOD的倍数
+    if(Period == 0)	return Ret_InvalidParam;
+	if(Period % MULTITIMER_MIN_PERIOD)	return Ret_InvalidParam;	
+	
+	// 因定时器周期允许改变，所以定时器开始前运行前必须保证不处于运行状态
+	if(eMTimerStateRunning == DrvMTiemr.MTimer[Id].State)	return Ret_DeviceBusy;
+	if(eMTimerStateUninited == DrvMTiemr.MTimer[Id].State)	return Ret_NoInit;
+	
     // 停止硬件计数，防止在更改过程中进入中断
-    SMDrv_CTimer_Stop(MULTI_CTIMER_MODULE);
-    
-    multiTimerPara[idTemp].freq  = freq;
-    multiTimerPara[idTemp].IsrCb = IsrCb;
-    for(i = 0; i < MULTITIMER_NUM_MAX; i++)
-    {
-        if(multiTimerPara[i].freq == 0)
-            continue;
-        switch(multiTimerPara[i].freq)
-        {
-        case FREQ_1HZ:
-        case FREQ_2HZ:
-        case FREQ_25HZ:
-        case FREQ_50HZ:
-        case FREQ_100HZ:
-        case FREQ_200HZ:
-            if(maxFreqHzTemp < multiTimerPara[i].freq)
-                maxFreqHzTemp = multiTimerPara[i].freq;
-            break;
-        default:
-            maxFreqHzTemp = 1000;
-            break;
-        }
-    }
+    SMDrv_CTimer_Stop(MULTI_CTIMER_MODULE);	
+	
+	DrvMTiemr.MTimer[Id].Period = Period;
+	DrvMTiemr.MTimer[Id].State = eMTimerStateRunning;
+	
+	/* 获取已运行定时器周期的最大公约数，作为硬件定时器最小tick */
+	tGCDPeriod = DrvMTiemr.MTimer[Id].Period;
+	for(uint32_t i = 0;i < DrvMTiemr.CreateCnt;i++)
+	{
+		if(eMTimerStateRunning ==  DrvMTiemr.MTimer[i].State)
+			tGCDPeriod = Get_GCD(tGCDPeriod, DrvMTiemr.MTimer[i].Period);
+	}
+	
+	// 如果有定时器正在运行，保存原有周期，否则此值为当前周期
+	if(DrvMTiemr.RunningCnt)
+		tOldPeriod = DrvMTiemr.MinPeriod;
+	else
+		tOldPeriod = tGCDPeriod;
+	
+	DrvMTiemr.MinPeriod = tGCDPeriod;
 
-    if(maxFreqHzTemp > maxFreqHz)
-    {
-        // 硬件定时器频率改变，计数需重新调整
-        maxFreqHz = maxFreqHzTemp;
-        for(i = 0; i < MULTITIMER_NUM_MAX; i++)
-        {
-            if(multiTimerPara[i].freq != 0)
-            {
-                multiTimerPara[i].cnt    = 0;
-                multiTimerPara[i].aimCnt = maxFreqHz / multiTimerPara[i].freq;
-            }
-        }
-        MultiTimer_Open(maxFreqHz);
-        SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
-    }
-    else
-    {
-        // 最大频率未变更，直接重新开启硬件定时器
-        SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
-    }
-    return Ret_OK;
+	/* 重新计算tick数，并开始运行定时器 */
+	for(uint32_t i = 0;i < DrvMTiemr.CreateCnt;i++)		
+	{
+		if(eMTimerStateRunning ==  DrvMTiemr.MTimer[i].State)
+		{
+			DrvMTiemr.MTimer[i].AimTick = DrvMTiemr.MTimer[i].Period / DrvMTiemr.MinPeriod;
+			DrvMTiemr.MTimer[i].CurrTick = (DrvMTiemr.MTimer[i].CurrTick * tOldPeriod) / DrvMTiemr.MTimer[i].Period;			
+		}		
+	}
+	
+	SMDrv_CTimer_Open(MULTI_CTIMER_MODULE,DrvMTiemr.MinPeriod,Drv_MTimer_IsrCb);
+	SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
+	
+	DrvMTiemr.RunningCnt++;
+	
+	DRV_MTIMER_RTT_LOG(0,"Drv_MTimer_Start MinPeriod %d, CreateCnt %d, RunningCnt %d \n",
+		DrvMTiemr.MinPeriod, DrvMTiemr.CreateCnt, DrvMTiemr.RunningCnt);
 }
 
 //**********************************************************************
-// 函数功能：   删除一个timer，并返回操作结果。
-// 输入参数：   id:		定时器ID
-// 返回参数：	0x00:	设置成功
-// 				0x02:   参数非法
-//**********************************************************************
-uint8 Drv_MultiTimer_Delete(uint16 id)
+// 函数功能：   停止定时器
+// 输入参数：   id 定时器Id
+// 返回参数:
+// 注意事项：尽量别在Drv_MTimer_IsrCb中断中调用Drv_MTimer_Stop，可能导致剩余定时器有1次中断不准确
+uint32_t Drv_MTimer_Stop(uint32_t Id)
+{	
+	uint32_t tGCDPeriod;		// 最大公约数	
+	uint32_t tOldPeriod;		// 保存原来运行周期	
+	bool	tFirstFlg = true;	
+	
+	if(eMTimerStateRunning != DrvMTiemr.MTimer[Id].State)	return Ret_NoDevice;
+	
+	DrvMTiemr.MTimer[Id].State = eMTimerStateInited;
+	DrvMTiemr.MTimer[Id].AimTick = 0;
+	DrvMTiemr.MTimer[Id].CurrTick = 0;
+	DrvMTiemr.RunningCnt--;
+	
+	SMDrv_CTimer_Stop(MULTI_CTIMER_MODULE);
+	
+	// 如果还有定时器，重新计算最小周期
+	if(DrvMTiemr.RunningCnt)
+	{
+		for(uint32_t i = 0;i < DrvMTiemr.CreateCnt;i++)
+		{
+			if(eMTimerStateRunning ==  DrvMTiemr.MTimer[i].State)
+			{
+				if(tFirstFlg)
+				{
+					tFirstFlg = false;
+					tGCDPeriod = DrvMTiemr.MTimer[i].Period;
+				}
+				else
+				{
+					tGCDPeriod = Get_GCD(tGCDPeriod, DrvMTiemr.MTimer[i].Period);
+				}
+			}				
+		}
+
+		// 如果最小周期有改变，需重新计算tick值
+		if(tGCDPeriod != DrvMTiemr.MinPeriod)
+		{
+			tOldPeriod = DrvMTiemr.MinPeriod;
+			DrvMTiemr.MinPeriod = tGCDPeriod;
+			
+			/* 重新计算tick数，并开始运行定时器 */
+			for(uint32_t i = 0;i < DrvMTiemr.CreateCnt;i++)		
+			{
+				if(eMTimerStateRunning ==  DrvMTiemr.MTimer[i].State)
+				{
+					DrvMTiemr.MTimer[i].AimTick = DrvMTiemr.MTimer[i].Period / DrvMTiemr.MinPeriod;
+					DrvMTiemr.MTimer[i].CurrTick = (DrvMTiemr.MTimer[i].CurrTick * tOldPeriod) / DrvMTiemr.MTimer[i].Period;					
+				}	
+			}
+			
+			SMDrv_CTimer_Open(MULTI_CTIMER_MODULE,DrvMTiemr.MinPeriod,Drv_MTimer_IsrCb);
+			SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);			
+		}
+		else
+		{
+			SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
+		}
+	}
+	
+	DRV_MTIMER_RTT_LOG(0,"Drv_MTimer_Stop MinPeriod %d, CreateCnt %d, RunningCnt %d \n",
+		DrvMTiemr.MinPeriod, DrvMTiemr.CreateCnt, DrvMTiemr.RunningCnt);	
+}
+ 
+/****************** 以下为定时器测试代码 ******************************/ 
+#if DRV_MTIMER_RTT_DEBUG
+static uint32_t TimerId0, TimerId1;
+static void TimerId0IsrCb(void)
+{	
+	static uint32_t tCnt = 0;
+	
+	if(5 == ++tCnt)
+		Drv_MTimer_Stop(TimerId0);	
+	
+	DRV_MTIMER_RTT_LOG(0,"TimerId0IsrCb \n");	
+}
+
+static void TimerId1IsrCb(void)
 {
-    uint16 i;
-    uint16	maxFreqHzTemp = 0;
-
-    if(id >= MULTITIMER_NUM_MAX)
-        return Ret_InvalidParam;
-
-    // 停止硬件计数，防止在更改过程中进入中断
-    SMDrv_CTimer_Stop(MULTI_CTIMER_MODULE);
-
-    multiTimerPara[id].freq	  = 0;
-    multiTimerPara[id].cnt    = 0;
-    multiTimerPara[id].aimCnt = 0;
-    multiTimerPara[id].IsrCb  = NULL;
-    for(i = 0; i < MULTITIMER_NUM_MAX; i++)
-    {
-        if(multiTimerPara[i].freq == 0)
-            continue;
-        switch(multiTimerPara[i].freq)
-        {
-        case FREQ_1HZ:
-        case FREQ_2HZ:
-        case FREQ_25HZ:
-        case FREQ_50HZ:
-        case FREQ_100HZ:
-        case FREQ_200HZ:
-            if(maxFreqHzTemp < multiTimerPara[i].freq)
-                maxFreqHzTemp = multiTimerPara[i].freq;
-            break;
-        default:
-            maxFreqHzTemp = 1000;
-            break;
-        }
-    }
-
-    // 硬件定时器频率改变，计数需重新调整
-    if(maxFreqHzTemp != maxFreqHz)
-    {
-        // 所有定时器均已关闭
-        maxFreqHz = maxFreqHzTemp;
-        if(maxFreqHzTemp == 0)
-            return Ret_OK;
-
-        for(i = 0; i < MULTITIMER_NUM_MAX; i++)
-        {
-            if(multiTimerPara[i].freq != 0)
-            {
-                multiTimerPara[i].cnt    = 0;
-                multiTimerPara[i].aimCnt = maxFreqHz / multiTimerPara[i].freq;
-            }
-        }
-
-        MultiTimer_Open(maxFreqHz);   
-        SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
-    }
-    else
-    {
-        // 所有定时器均已关闭
-        if(maxFreqHzTemp == 0)
-            return Ret_OK;
-        else
-            SMDrv_CTimer_Start(MULTI_CTIMER_MODULE);
-    }
-
-    return Ret_OK;
+	static uint32_t tCnt = 0;
+	
+	if(2 == ++tCnt)
+		Drv_MTimer_Stop(TimerId1);
+	
+	DRV_MTIMER_RTT_LOG(0,"TimerId1IsrCb \n");
 }
+
+
+void Drv_MTimer_Test(void)
+{
+	Drv_MTimer_Init();
+	Drv_MTimer_Create(&TimerId0, 1000, TimerId0IsrCb);
+	Drv_MTimer_Create(&TimerId1, 1000, TimerId1IsrCb);
+	
+	Drv_MTimer_Start(TimerId0, 5);
+	Drv_MTimer_Start(TimerId1, 200);
+}
+#endif
+
 

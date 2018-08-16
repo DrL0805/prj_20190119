@@ -3,8 +3,5 @@
 
 
 
-void App_Action_Recongnition(uint8 *xyzData);
-
-
 #endif	//ACTIONRECONGNITION_H
 

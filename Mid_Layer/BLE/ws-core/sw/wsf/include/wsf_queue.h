@@ -22,6 +22,8 @@
 #ifndef WSF_QUEUE_H
 #define WSF_QUEUE_H
 
+#include "wsf_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
