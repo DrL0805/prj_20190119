@@ -167,8 +167,9 @@ static uint8 ctimer_modul2time(ctimer_module modul,uint16 u16freq,comm_cb *timer
         ptm_info->u32tm_id=2;
         ptm_info->u32tm_seg=AM_HAL_CTIMER_TIMERA;
         ptm_info->u32tm_irq=AM_HAL_CTIMER_INT_TIMERA2;
-        ptm_info->u32tm_conf=AM_HAL_CTIMER_FN_REPEAT | AM_HAL_CTIMER_INT_ENABLE | AM_HAL_CTIMER_XT_256HZ;
-        ptm_info->u32tm_delay= 7;
+        ptm_info->u32tm_conf=AM_HAL_CTIMER_FN_REPEAT | AM_HAL_CTIMER_INT_ENABLE | AM_HAL_CTIMER_XT_32_768KHZ;
+//        ptm_info->u32tm_delay= 328;	// 秒表精度	
+		ptm_info->u32tm_delay = (uint32)((32768 * u16freq / 1000) - 1);	// 转为ms 
         u8cb_id = 4;
     }
     else if(modul == COUNTDOWN_CTIMER_MODULE) //timer:(2,B)
@@ -177,7 +178,7 @@ static uint8 ctimer_modul2time(ctimer_module modul,uint16 u16freq,comm_cb *timer
         ptm_info->u32tm_seg=AM_HAL_CTIMER_TIMERB;
         ptm_info->u32tm_irq=AM_HAL_CTIMER_INT_TIMERB2;
         ptm_info->u32tm_conf=AM_HAL_CTIMER_FN_REPEAT | AM_HAL_CTIMER_INT_ENABLE | AM_HAL_CTIMER_XT_256HZ;
-        ptm_info->u32tm_delay= 7;
+        ptm_info->u32tm_delay= (uint32)((256 * u16freq / 1000) - 1);
         u8cb_id = 5;
     }
     else if(modul == RTC_CTIMER_MODULE)       //timer:(3,A)

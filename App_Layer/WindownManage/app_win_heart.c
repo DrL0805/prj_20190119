@@ -36,7 +36,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 					break;
             	default:
             		break;
-            }			
+            }
 			break;
 		case MID_KEY0_HOLDSHORT:
 			switch (AppWinParam.CurrSubWinHandle)
@@ -46,7 +46,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
             		break;
             	default:
             		break;
-            }			
+            }
 			break;
 		case MID_KEY0_HOLDLONG:
 			/* 开机状态下长按12秒进入仓储模式*/
@@ -58,7 +58,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 					break;
             	default:
             		break;
-            }			
+            }
 			break;
 		default: break;
 	}

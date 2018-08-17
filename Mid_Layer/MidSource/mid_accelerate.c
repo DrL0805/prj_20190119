@@ -137,26 +137,25 @@ void Mid_Accel_Init(void)
 // 返回参数：	
 uint16_t Mid_Accel_StartSample(uint8_t* Id, eMidAccelSampleRate Rate, eMidAccelSampleRange Range)
 {
-	uint32_t tId, tTmp;
+	uint32_t tId;
 	
 	// 分配采样定时器ID
-	for(tTmp = 0;tTmp < MID_ACCEL_ID_MAX;tTmp++)
+	for(tId = 0;tId < MID_ACCEL_ID_MAX;tId++)
 	{
-		if(false == MID_ACCEL.ID[tTmp].EnableFlg)
+		if(false == MID_ACCEL.ID[tId].EnableFlg)
 		{
-			tId = tTmp;
-			*Id = tTmp;
+			*Id = tId;
 			break;
 		}
 	}
 	
 	// 所有定时器已分配完，返回错误
-	if(tTmp >= MID_ACCEL_ID_MAX)
+	if(tId >= MID_ACCEL_ID_MAX)
 		return Ret_QueueFull;
 	
-	MID_ACCEL.ID[tTmp].EnableFlg = true;
-	MID_ACCEL.ID[tTmp].Rate = Rate;
-	MID_ACCEL.ID[tTmp].Range = Range;
+	MID_ACCEL.ID[tId].EnableFlg = true;
+	MID_ACCEL.ID[tId].Rate = Rate;
+	MID_ACCEL.ID[tId].Range = Range;
 	
 	// 查找最大采样率
 	MID_ACCEL.SampleRate = eMidAccelSampleRate1HZ;

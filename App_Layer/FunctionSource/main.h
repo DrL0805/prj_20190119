@@ -6,7 +6,7 @@
 
 #include "system_task.h"
 
-#include "mid_scheduler.h"
+
 #include "drv_touch.h"
 #include "module_test.h"
 #include "SEGGER_RTT.h"
@@ -18,15 +18,26 @@
 #include "mid_sport_scene.h"
 #include "mid_sleep_scene.h"
 
+// mid
+#include "mid_scheduler.h"
+
 // mod
 #include "mod_power.h"
 #include "mod_algorithm.h"
 #include "mod_pdu.h"
 #include "mod_flash.h"
 #include "mod_time.h"
+#include "mod_system.h"
 
 // app
 #include "app_lcd.h"
 #include "App_win_process.h"
 
 #endif
+
+
+
+
+
+
+

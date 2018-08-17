@@ -20,7 +20,7 @@ static void Bsp_Init(void)
 	
 	// 开启RTC时间
 	Mid_Rtc_Init();
-	Mid_Rtc_Start();
+	
 	
 	// 测试闹钟
 	alarm_clock_t tAlarm;
@@ -30,8 +30,8 @@ static void Bsp_Init(void)
 	tAlarm.min = 2;
 	Mid_AlarmClock_Write(&tAlarm, 3);
 	
-//	Mid_StopWatch_Init();	// 秒表
-//	Mid_Countdown_Init();	// 倒计时
+	Mid_StopWatch_Init();	// 秒表
+	Mid_Countdown_Init();	// 倒计时
 
 //	Mid_Font_Init();
 	
@@ -41,9 +41,10 @@ static void Bsp_Init(void)
 
 	// 场景数据初始化
 	Mid_SleepScene_Init();
-	Mid_SleepScene_Start();	
 	Mid_SportScene_Init();
-	Mid_SportScene_Start();
+
+	
+	Mod_Sys_Init();
 }
 
 static void Task_Init(void)

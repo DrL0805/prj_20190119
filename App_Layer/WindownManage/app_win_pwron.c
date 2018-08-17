@@ -1,13 +1,11 @@
 
 #include "app_win_pwron.h"
 
-static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_PwrOnMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 
 #define AppPwronWinMenuNum (sizeof(AppPwronWinMenu)/sizeof(AppPwronWinMenu[0]))	
 App_Win_Menu_T	AppPwronWinMenu[] = 
 {
-	{eWinMenukey, App_Win_KeyMenuHandler},
 	{eWinMenuPwrOn, App_Win_PwrOnMenuHandler},
 };
 
@@ -29,29 +27,6 @@ static eAppWinHandle App_Win_PwrOnMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 }
 
 //**********************************************************************
-// 函数功能：  窗口菜单处理函数
-// 输入参数：  WinHandle	当前窗口句柄
-// 				message		传入参数
-// 返回参数：  成功创建的窗口句柄
-static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
-{
-	APP_WIN_RTT_LOG(0,"App_Win_KeyMenuHandler \r\n");
-	
-	switch(message.val)
-	{
-		case MID_KEY0_SHORT:
-			break;
-		case MID_KEY0_HOLDSHORT:
-			break;
-		case MID_KEY0_HOLDLONG:
-			break;
-		default: break;
-	}
-	
-	return WinHandle;
-}
-
-//**********************************************************************
 // 函数功能：  窗口初始化
 // 输入参数：  
 // 返回参数：  成功创建的窗口句柄
@@ -60,6 +35,15 @@ eAppWinHandle App_PwronWin_Init(void)
 	APP_WIN_RTT_LOG(0,"App_PwronWin_Init \r\n");
 	
 	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+	
+	// 系统功能开启
+	Mod_Sys_PwrOn();
+	
+	// 模拟发送开机动画完成事件，直接进入下一窗口
+	App_Win_Msg_T WinMsg;
+	WinMsg.MenuTag = eWinMenuPwrOn;
+	WinMsg.val = 0;
+	App_Win_TaskEventSet(&WinMsg);
 	
 	return ePwronWinHandle;
 }

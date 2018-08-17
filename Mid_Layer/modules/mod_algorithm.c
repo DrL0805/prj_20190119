@@ -12,8 +12,6 @@ static QueueHandle_t 	sAlgo_QueueHandle;				// 队列句柄
 
 static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 {
-	int16_t	tData[3];
-	uint32_t tInterval;
 	MID_ACCEL_PARA_T	tMidAccel;
 	
 	// 读取数据

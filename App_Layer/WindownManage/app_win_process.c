@@ -99,6 +99,8 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 	uint32_t TmpWinIndex;				// 句柄索引号
 	eAppWinHandle TmpWinHandle;			// 保存函数调用返回的句柄
 	
+	APP_WIN_RTT_LOG(0,"Before WinHanle %d %d \n",AppWinParam.CurrWinHanle, AppWinParam.CurrSubWinHandle);
+	
 	// 搜寻当前窗口句柄索引号
 	for(TmpWinIndex = 0;TmpWinIndex < AppWinNum;TmpWinIndex++)
 	{
@@ -132,7 +134,7 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 	}
 	
 	// 处理完后，打印当前窗口句柄
-	APP_WIN_RTT_LOG(0,"CurrWinHanle %d, CurrSubWinHandle %d \n",AppWinParam.CurrWinHanle, AppWinParam.CurrSubWinHandle);
+	APP_WIN_RTT_LOG(0,"After WinHanle %d %d \n",AppWinParam.CurrWinHanle, AppWinParam.CurrSubWinHandle);
 	
 	return AppWinParam.CurrWinHanle;
 }
@@ -150,12 +152,6 @@ void App_Win_TaskEventSet(App_Win_Msg_T* msg)
 static void App_Win_TaskProcess(void *pvParameters)
 {
 	App_Win_Msg_T	Msg;
-	
-	// 窗口参数初始化，开机后默认进入仓储模式
-	if(eErrWinHandle == App_Window_Init(eTimeWinHandle))
-	{
-		APP_WIN_RTT_ERR(0,"App_Window_Init Err \r\n");
-	}
 	
 	Win_QueueHandle = xQueueCreate(WIN_TASK_QUEUE_LENGTH, WIN_TASK_QUEUE_SIZE);
 	if(Win_QueueHandle == NULL)

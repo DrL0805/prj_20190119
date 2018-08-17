@@ -2,6 +2,7 @@
 #define APP_WIN_PROCESS_H
 
 #include "app_win_common.h"
+#include "main.h"
 
 
 typedef 	eAppWinHandle WinInitFunc(void);
