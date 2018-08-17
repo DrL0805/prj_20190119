@@ -19,8 +19,13 @@ static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 	// 读取数据
 	Mid_Accel_ParamGet(&tMidAccel);
 	
-	// 计步算法
+	// 计步算法处理
 	Mid_SportScene_Algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
+	
+	// 睡眠算法处理
+	Mid_SleepScene_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
+	
+	
 }
 
 static void Mod_Algo_TaskProcess(void *pvParameters)

@@ -127,8 +127,8 @@ static void KeyTest(void)
 	
 	#if 0	// 加速度计任务测试
 //	MID_SCHD_RTT_LOG(0,"Mid_Accel_SelfTest %02X \r\n", Mid_Accel_SelfTest());
-	Mid_Accel_ParamSet(eMidAccelSampleRate25HZ, eMidAccelSampleRange2G);
-	Mid_Accel_StartSample();
+//	Mid_Accel_ParamSet(eMidAccelSampleRate25HZ, eMidAccelSampleRange2G);
+//	Mid_Accel_StartSample();
 	#endif 
 	
 	#if 0	// 角速度计任务测试

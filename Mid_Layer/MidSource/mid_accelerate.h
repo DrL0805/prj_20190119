@@ -4,6 +4,8 @@
 #include "platform_common.h"
 #include "drv_accelerate.h"
 
+#define MID_ACCEL_ID_MAX	(5)
+
 // 采样范围
 typedef enum
 {
@@ -26,11 +28,19 @@ typedef enum
 
 typedef struct
 {
-	uint32_t 					MTiemrId;		
-	
+	bool					EnableFlg;	
+	eMidAccelSampleRate 	Rate;		// 采样率
+	eMidAccelSampleRange	Range;		// 采样范围
+}MID_ACCEL_ID_T;
+
+typedef struct
+{
 	bool						InitedFlg;		// 已初始化标志
-	bool						SamplingFlg;	// 正在采样标志
+	bool						SamplingFlg;	// 正在采样标志	
 	
+	uint32_t 					MTiemrId;
+	MID_ACCEL_ID_T				ID[MID_ACCEL_ID_MAX];
+
 	int16_t 					LatestData[3];		// 保存最新采到的数据
 	eMidAccelSampleRate			SampleRate;			// 硬件采样率
 	eMidAccelSampleRange		SampleRange;		// 硬件采样范围
@@ -38,9 +48,9 @@ typedef struct
 }MID_ACCEL_PARA_T;
 
 extern void Mid_Accel_Init(void);
-extern void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range);
-extern void Mid_Accel_StartSample(void);
-extern void Mid_Accel_StopSample(void);
+//extern void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range);
+extern uint16_t Mid_Accel_StartSample(uint8_t* Id, eMidAccelSampleRate Rate, eMidAccelSampleRange Range);
+extern uint16_t Mid_Accel_StopSample(uint8_t Id);
 extern void Mid_Accel_DataUpdate(void);
 extern void Mid_Accel_ParamGet(MID_ACCEL_PARA_T* MID_ACCEL_PARA);
 extern void Mid_Accel_DataRead(int16 data[3]);

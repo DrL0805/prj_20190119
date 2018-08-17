@@ -43,7 +43,6 @@ void Mid_SportScene_Algorithm(int16 *xyzData, uint32_t Interval)
 	if(Mid_SportScene.IntervalMs >= SPORT_SCENE_PERIOD_MS)
 	{
 		Mid_SportScene.IntervalMs -= SPORT_SCENE_PERIOD_MS;
-	
 		//计步运动算法处理　
 		for(i = 0; i < 3; i ++)
 		{		
@@ -58,6 +57,8 @@ void Mid_SportScene_Algorithm(int16 *xyzData, uint32_t Interval)
 			stepSecAcc   += temp;
 			step10SecAcc += temp;
 
+//			SEGGER_RTT_printf(0,"totalStep %d \n",stepSportInfo.totalStep);
+			
 			stepSportInfo.stepComplete   = (uint16)(stepSportInfo.totalStep * 100 / stepSportInfo.stepAim);
 			if(stepSportInfo.stepComplete >= 100)
 			{
@@ -71,7 +72,7 @@ void Mid_SportScene_Algorithm(int16 *xyzData, uint32_t Interval)
 					stepCompleteRemind = 1;
 					
 					/* 发送运动目标达成事件 */
-
+					
 				}
 			}
 
@@ -120,8 +121,9 @@ uint16 Mid_SportScene_Init(void)
 // 调用：需开启计步功能时
 void Mid_SportScene_Start(void)
 {
-	Mid_Accel_ParamSet(eMidAccelSampleRate25HZ, eMidAccelSampleRange2G);
-	Mid_Accel_StartSample();	
+	Mid_Accel_StartSample(&Mid_SportScene.SampleId, eMidAccelSampleRate25HZ, eMidAccelSampleRange2G);
+	
+	Mid_SportScene.IntervalMs = 0;
 	Mid_SportScene.EnableFlg = true;
 }
 
@@ -133,7 +135,8 @@ void Mid_SportScene_Start(void)
 // 调用：需关闭计步功能时
 void Mid_SportScene_Stop(void)
 {
-	Mid_Accel_StopSample();
+	Mid_Accel_StopSample(Mid_SportScene.SampleId);
+	
 	Mid_SportScene.EnableFlg = false;
 }
 

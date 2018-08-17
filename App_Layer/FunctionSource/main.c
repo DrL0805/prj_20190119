@@ -40,6 +40,8 @@ static void Bsp_Init(void)
 //	Mid_NandFlash_Init();
 
 	// 场景数据初始化
+	Mid_SleepScene_Init();
+	Mid_SleepScene_Start();	
 	Mid_SportScene_Init();
 	Mid_SportScene_Start();
 }
@@ -96,7 +98,7 @@ int main(void)
 	Task_Init();
 	
 	SEGGER_RTT_printf(0,"Sys Init Suc \n");
-   
+	
 	vTaskStartScheduler();
     while(1)
 	{

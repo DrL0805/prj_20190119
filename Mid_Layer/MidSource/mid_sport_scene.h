@@ -27,6 +27,7 @@ typedef struct
 typedef struct
 {
 	bool		EnableFlg;		// 使用计步算法标志
+	uint8_t		SampleId;
 	uint32_t 	IntervalMs;		
 }Mid_SportScene_Param_t;
 

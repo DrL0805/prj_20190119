@@ -124,19 +124,63 @@ void Mid_Accel_Init(void)
 // 输入参数：	Rate 采样率
 //				Range 采样周期
 // 返回参数：	无
-void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range)
-{
-	MID_ACCEL.SampleRate = Rate;
-	MID_ACCEL.SampleRange = Range;
-	MID_ACCEL.SamplePeriod = 1000 / MID_ACCEL.SampleRate;		
-}
+//void Mid_Accel_ParamSet(eMidAccelSampleRate Rate, eMidAccelSampleRange Range)
+//{
+//	MID_ACCEL.SampleRate = Rate;
+//	MID_ACCEL.SampleRange = Range;
+//	MID_ACCEL.SamplePeriod = 1000 / MID_ACCEL.SampleRate;		
+//}
 
 //**********************************************************************
 // 函数功能：	开始采样
 // 输入参数：	
 // 返回参数：	
-void Mid_Accel_StartSample(void)
+uint16_t Mid_Accel_StartSample(uint8_t* Id, eMidAccelSampleRate Rate, eMidAccelSampleRange Range)
 {
+	uint32_t tId, tTmp;
+	
+	// 分配采样定时器ID
+	for(tTmp = 0;tTmp < MID_ACCEL_ID_MAX;tTmp++)
+	{
+		if(false == MID_ACCEL.ID[tTmp].EnableFlg)
+		{
+			tId = tTmp;
+			*Id = tTmp;
+			break;
+		}
+	}
+	
+	// 所有定时器已分配完，返回错误
+	if(tTmp >= MID_ACCEL_ID_MAX)
+		return Ret_QueueFull;
+	
+	MID_ACCEL.ID[tTmp].EnableFlg = true;
+	MID_ACCEL.ID[tTmp].Rate = Rate;
+	MID_ACCEL.ID[tTmp].Range = Range;
+	
+	// 查找最大采样率
+	MID_ACCEL.SampleRate = eMidAccelSampleRate1HZ;
+	for(uint32_t i = 0;i < MID_ACCEL_ID_MAX;i++)
+	{
+		if(MID_ACCEL.ID[i].EnableFlg)
+		{
+			MID_ACCEL.SampleRate = (MID_ACCEL.SampleRate >= MID_ACCEL.ID[i].Rate) ?  MID_ACCEL.SampleRate : MID_ACCEL.ID[i].Rate;
+		}
+	}
+	
+	// 查找最小采样范围
+	MID_ACCEL.SampleRange = eMidAccelSampleRange16G;
+	for(uint32_t i = 0;i < MID_ACCEL_ID_MAX;i++)
+	{
+		if(MID_ACCEL.ID[i].EnableFlg)
+		{
+			MID_ACCEL.SampleRange = (MID_ACCEL.SampleRange <= MID_ACCEL.ID[i].Range) ?  MID_ACCEL.SampleRange : MID_ACCEL.ID[i].Range;
+		}
+	}
+	
+	// 计算采样周期
+	MID_ACCEL.SamplePeriod = 1000 / MID_ACCEL.SampleRate;	
+	
 	// 硬件配置
 	Mid_Schd_M2MutexTake();
 	Drv_Accel_Set(Mid_Accel_DrvRateGet(MID_ACCEL.SampleRate), Mid_Accel_DrvRangeGet(MID_ACCEL.SampleRange));
@@ -147,23 +191,85 @@ void Mid_Accel_StartSample(void)
 	Drv_MTimer_Start(MID_ACCEL.MTiemrId, MID_ACCEL.SamplePeriod);
 	
 	MID_ACCEL.SamplingFlg = true;
+	
+	return Ret_OK;
 }
 
 //**********************************************************************
 // 函数功能：	停止采样
 // 输入参数：	
 // 返回参数：	
-void Mid_Accel_StopSample(void)
+uint16_t Mid_Accel_StopSample(uint8_t Id)
 {
-	// 停止硬件采样
-	Mid_Schd_M2MutexTake();
-	Drv_Accel_GoSleep();
-	Mid_Schd_M2MutexGive();
+	uint32_t 	tId;
+	bool		tFlg = false;
 	
-	// 停止采样定时器
-	Drv_MTimer_Stop(MID_ACCEL.MTiemrId);	
+	if(Id > MID_ACCEL_ID_MAX)
+		return Ret_InvalidParam;
 	
-	MID_ACCEL.SamplingFlg = false;
+	if(false == MID_ACCEL.ID[Id].EnableFlg)
+		return Ret_NoDevice;
+	
+	MID_ACCEL.ID[Id].EnableFlg = false;
+	
+	// 查找是否还有外设需要
+	for(tId = 0;tId < MID_ACCEL_ID_MAX;tId++)
+	{
+		if(MID_ACCEL.ID[tId].EnableFlg)
+		{
+			tFlg = true;
+			break;
+		}
+	}
+	
+	if(tFlg)	// 还有外设需要，重新计算采样周期
+	{
+		// 查找最大采样率
+		MID_ACCEL.SampleRate = eMidAccelSampleRate1HZ;
+		for(uint32_t i = 0;i < MID_ACCEL_ID_MAX;i++)
+		{
+			if(MID_ACCEL.ID[i].EnableFlg)
+			{
+				MID_ACCEL.SampleRate = (MID_ACCEL.SampleRate >= MID_ACCEL.ID[i].Rate) ?  MID_ACCEL.SampleRate : MID_ACCEL.ID[i].Rate;
+			}
+		}
+		
+		// 查找最小采样范围
+		MID_ACCEL.SampleRange = eMidAccelSampleRange16G;
+		for(uint32_t i = 0;i < MID_ACCEL_ID_MAX;i++)
+		{
+			if(MID_ACCEL.ID[i].EnableFlg)
+			{
+				MID_ACCEL.SampleRange = (MID_ACCEL.SampleRange <= MID_ACCEL.ID[i].Range) ?  MID_ACCEL.SampleRange : MID_ACCEL.ID[i].Range;
+			}
+		}
+		
+		// 计算采样周期
+		MID_ACCEL.SamplePeriod = 1000 / MID_ACCEL.SampleRate;	
+		
+		// 硬件配置
+		Mid_Schd_M2MutexTake();
+		Drv_Accel_Set(Mid_Accel_DrvRateGet(MID_ACCEL.SampleRate), Mid_Accel_DrvRangeGet(MID_ACCEL.SampleRange));
+		Mid_Schd_M2MutexGive();
+		
+		// 更新采样定时器参数并启动
+		Drv_MTimer_Stop(MID_ACCEL.MTiemrId);	
+		Drv_MTimer_Start(MID_ACCEL.MTiemrId, MID_ACCEL.SamplePeriod);		
+	}
+	else	// 没有外设需要，关掉此外设
+	{
+		// 停止硬件采样
+		Mid_Schd_M2MutexTake();
+		Drv_Accel_GoSleep();
+		Mid_Schd_M2MutexGive();
+		
+		// 停止采样定时器
+		Drv_MTimer_Stop(MID_ACCEL.MTiemrId);	
+		
+		MID_ACCEL.SamplingFlg = false;		
+	}
+	
+	return Ret_OK;
 }
 
 //**********************************************************************
