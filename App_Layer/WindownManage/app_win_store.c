@@ -18,8 +18,6 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 {
 	APP_WIN_RTT_LOG(0,"App_Win_KeyMenuHandler \r\n");
 	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
 	switch(message.val)
 	{
 		case MID_KEY0_SHORT:
@@ -27,14 +25,14 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 			break;
 		case MID_KEY0_HOLDSHORT:
 			/* 仓储模式下长按3秒进入开机模式 */
-			TmpWinHandle = ePwronWinHandle;
+			AppWinParam.CurrWinHanle = ePwronWinHandle;
 			break;
 		case MID_KEY0_HOLDLONG:
 			break;
 		default: break;
 	}
 	
-	return TmpWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************
@@ -45,9 +43,10 @@ eAppWinHandle App_StoreWin_Init(void)
 {
 	APP_WIN_RTT_LOG(0,"App_StoreWin_Init \r\n");
 	
+	AppWinParam.CurrWinHanle = eStoreWinHandle;
 	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
 	
-	return eStoreWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************

@@ -20,13 +20,14 @@ typedef struct
 
 typedef struct
 {
+	bool				WinRecoverFlg;		// 窗口恢复标志
+	
 	eAppWinHandle		CurrWinHanle;		// 当前一级句柄
 	eAppSubWinHandle	CurrSubWinHandle;	// 当前二级句柄
-	
 	eAppWinHandle		LastWinHanle;		// 上次一级句柄，用于锁屏状态的窗口恢复
 	eAppSubWinHandle	LastSubWinHandle;	// 上次二级句柄
 	
-	uint32_t 			IdleWinCnt;			// 空闲窗口计时，用于锁屏状态
+	uint32_t 			LockWinCnt;			// 空闲窗口计时，用于锁屏状态
 }App_Win_Param_T;
 
 extern eAppWinHandle App_Window_Process(App_Win_Msg_T message);

@@ -23,7 +23,7 @@ static void Mod_Time_RTCHandler(Mod_Time_TaskMsg_T*	Msg)
 			break;
 		case eMidRTCMsgSec:
 			Mid_Rtc_TimeRead(&tRTCTime);
-			MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
+//			MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
 
 			// 每秒检测一次锁屏事件
 			App_Window_LockWinCnt();

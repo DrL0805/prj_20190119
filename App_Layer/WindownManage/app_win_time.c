@@ -23,9 +23,7 @@ App_Win_Menu_T	AppTimeWinMenu[] =
 static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_KeyMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
+
 	switch(message.val)
 	{
 		case MID_KEY0_SHORT:
@@ -35,12 +33,12 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 			break;
 		case MID_KEY0_HOLDLONG:
 			/* 时间模式下长按12秒进入仓储模式*/
-			TmpWinHandle = eStoreWinHandle;
+			AppWinParam.CurrWinHanle = eStoreWinHandle;
 			break;
 		default: break;
 	}
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -51,16 +49,14 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_SlideMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
+
 	switch(message.val)
 	{
 		case 0:		// 上滑
-			TmpWinHandle = eSportWinHandle;
+			AppWinParam.CurrWinHanle = eSportWinHandle;
 			break;
 		case 1:		// 下滑
-			TmpWinHandle = eHistoryWinHandle;
+			AppWinParam.CurrWinHanle = eHistoryWinHandle;
 			break;
 		case 2:		// 左滑
 			break;
@@ -69,7 +65,7 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 		default: break;
 	}
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -81,9 +77,7 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 {
 	APP_WIN_RTT_LOG(0,"App_Win_ClickMenuHandler \r\n");
 	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -94,18 +88,16 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 static eAppWinHandle App_Win_LockMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_LockMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
-	// 保存之前窗口句柄
+
+	// 进入锁屏前保存之前窗口类型
 	AppWinParam.LastWinHanle = AppWinParam.CurrWinHanle;
-	AppWinParam.LastSubWinHandle = AppWinParam.CurrSubWinHandle;
+	AppWinParam.LastSubWinHandle = AppWinParam.CurrSubWinHandle;	
 	
 	// 进入锁屏窗口
-	AppWinParam.IdleWinCnt = 0;
-	TmpWinHandle = eLockWinHandle;
+	AppWinParam.CurrWinHanle = eLockWinHandle;
+	AppWinParam.LockWinCnt = 0;
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -116,9 +108,19 @@ eAppWinHandle App_TimeWin_Init(void)
 {
 	APP_WIN_RTT_LOG(0,"App_TimeWin_Init \r\n");
 	
-	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+	if(AppWinParam.WinRecoverFlg)
+	{
+		AppWinParam.WinRecoverFlg = false;
+		AppWinParam.CurrWinHanle = eTimeWinHandle;
+		AppWinParam.CurrSubWinHandle = AppWinParam.LastSubWinHandle;
+	}
+	else
+	{
+		AppWinParam.CurrWinHanle = eTimeWinHandle;
+		AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+	}
 	
-	return eTimeWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************

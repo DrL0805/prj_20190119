@@ -49,16 +49,18 @@ App_Win_Param_T	AppWinParam =
 	{
 		.CurrWinHanle = eInvalidWinHandle,
 		.CurrSubWinHandle = eAppSubWinHandleNone,
-		.IdleWinCnt = 0,
+		.LockWinCnt = 0,
 	};	
 
 
 void App_Window_LockWinCnt(void)
 {
-	AppWinParam.IdleWinCnt++;
+	AppWinParam.LockWinCnt++;
+	
+	APP_WIN_RTT_LOG(0,"LockWinCnt %d \n",AppWinParam.LockWinCnt);
 	
 	// 锁屏到时，发送锁屏事件
-	if((AppWinParam.IdleWinCnt > APP_WIN_LOCK_TIMEOUT) && (eLockWinHandle != AppWinParam.CurrWinHanle))
+	if((AppWinParam.LockWinCnt > APP_WIN_LOCK_TIMEOUT) && (eLockWinHandle != AppWinParam.CurrWinHanle))
 	{
 		App_Win_Msg_T WinMsg;
 		WinMsg.MenuTag = eWinMenuLock;
@@ -127,7 +129,8 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 	if((TmpWinIndex < AppWinNum) && (NULL != AppWin[TmpWinIndex].WinInit) && (NULL != AppWin[TmpWinIndex].CallBack))
 	{
 		// 窗口句柄索引回调函数处理
-		TmpWinHandle = AppWin[TmpWinIndex].CallBack(AppWinParam.CurrWinHanle, message);
+		TmpWinHandle = AppWinParam.CurrWinHanle;
+		AppWin[TmpWinIndex].CallBack(AppWinParam.CurrWinHanle, message);
 		
 		// 若窗口句柄改变，需切换到新窗口
 		if(TmpWinHandle != AppWinParam.CurrWinHanle)
@@ -135,7 +138,7 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 			// 搜寻需切换到的窗口句柄索引号
 			for(TmpWinIndex = 0;TmpWinIndex < AppWinNum;TmpWinIndex++)
 			{
-				if(TmpWinHandle == AppWin[TmpWinIndex].HandleIndex)
+				if(AppWinParam.CurrWinHanle == AppWin[TmpWinIndex].HandleIndex)
 					break;
 			}
 			
@@ -150,6 +153,12 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 	
 	// 处理完后，打印当前窗口句柄
 	APP_WIN_RTT_LOG(0,"After WinHanle %d %d \n",AppWinParam.CurrWinHanle, AppWinParam.CurrSubWinHandle);
+	
+	// 如果是按键，重置锁屏计数
+	if(eWinMenukey == message.MenuTag)
+	{
+		AppWinParam.LockWinCnt = 0;
+	}
 	
 	return AppWinParam.CurrWinHanle;
 }

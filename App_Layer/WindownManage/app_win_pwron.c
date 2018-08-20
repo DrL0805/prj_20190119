@@ -17,13 +17,11 @@ App_Win_Menu_T	AppPwronWinMenu[] =
 static eAppWinHandle App_Win_PwrOnMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_PwrOnMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;	
-	
+
 	/* 开机动画完成，进入时间模式 */
-	TmpWinHandle = eTimeWinHandle;
+	AppWinParam.CurrWinHanle = eTimeWinHandle;
 	
-	return TmpWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************
@@ -34,6 +32,7 @@ eAppWinHandle App_PwronWin_Init(void)
 {
 	APP_WIN_RTT_LOG(0,"App_PwronWin_Init \r\n");
 	
+	AppWinParam.CurrWinHanle = ePwronWinHandle;
 	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
 	
 	// 系统功能开启
@@ -45,7 +44,7 @@ eAppWinHandle App_PwronWin_Init(void)
 	WinMsg.val = 0;
 	App_Win_TaskEventSet(&WinMsg);
 	
-	return ePwronWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************
