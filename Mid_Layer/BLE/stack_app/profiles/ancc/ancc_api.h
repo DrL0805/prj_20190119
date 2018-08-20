@@ -187,7 +187,11 @@ typedef struct{
 typedef void (*anccAttrRecvCback_t)(active_notif_t* pAttr);
 typedef void (*anccNotiCmplCback_t)(active_notif_t* pAttr, uint32_t notiUid);
 
-typedef struct{
+/*! Application notify remove callback */
+typedef void (*anccNotiRemoveCback_t)(ancc_notif_t* pAttr);
+
+typedef struct
+{
     dmConnId_t          connId;
     uint16_t*           hdlList;
     anccCfg_t           cfg;
@@ -196,7 +200,8 @@ typedef struct{
     active_notif_t      active;
     anccAttrRecvCback_t attrCback;
     anccNotiCmplCback_t notiCback;
-}anccCb_t;
+    anccNotiRemoveCback_t rmvCback;
+} anccCb_t;
 
 /**************************************************************************************************
   Function Prototypes
@@ -208,7 +213,7 @@ void AnccGetNotificationAttribute(uint16_t *pHdlList, uint32_t notiUid);
 
 // initialization interfaces
 void AnccInit(wsfHandlerId_t handlerId, anccCfg_t* cfg);
-void AnccCbackRegister(anccAttrRecvCback_t attrCback, anccNotiCmplCback_t notiCback);
+void AnccCbackRegister(anccAttrRecvCback_t attrCback, anccNotiCmplCback_t notiCback, anccNotiRemoveCback_t rmvCback);
 
 // app routines
 void AnccNtfValueUpdate(uint16_t *pHdlList, attEvt_t * pMsg, uint8_t actionTimerEvt);

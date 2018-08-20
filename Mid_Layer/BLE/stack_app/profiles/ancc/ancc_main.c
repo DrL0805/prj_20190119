@@ -619,7 +619,14 @@ void AnccNtfValueUpdate(uint16_t *pHdlList, attEvt_t * pMsg, uint8_t actionTimer
         ancs_notif.category_count = p[3];
         BYTES_TO_UINT32(ancs_notif.notification_uid, &p[4]);
 
-        if(!anccActionListPush(&ancs_notif))
+        if (BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED == ancs_notif.event_id) 
+        {
+            if (NULL != anccCb.rmvCback) 
+            {
+                anccCb.rmvCback(&ancs_notif);
+            }
+        } 
+        else if ( !anccActionListPush(&ancs_notif) )
         {
             // list full
             // APP_TRACE_INFO0("action list full...");
@@ -650,8 +657,9 @@ void AnccNtfValueUpdate(uint16_t *pHdlList, attEvt_t * pMsg, uint8_t actionTimer
  *  \return None.
  */
 /*************************************************************************************************/
-void AnccCbackRegister(anccAttrRecvCback_t attrCback, anccNotiCmplCback_t notiCback)
+void AnccCbackRegister(anccAttrRecvCback_t attrCback, anccNotiCmplCback_t notiCback, anccNotiRemoveCback_t rmvCback)
 {
     anccCb.attrCback = attrCback;
     anccCb.notiCback = notiCback;
+    anccCb.rmvCback = rmvCback;
 }

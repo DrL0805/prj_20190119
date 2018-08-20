@@ -293,6 +293,7 @@ static void App_BleStatus_Change(uint8 u8Status)
     {
         if ((systermConfig.bleDiscRemindSwitch == SWITCH_ON) && bleState == BLE_CONNECT)//Á¬½Ó¶Ï¿ª
         {
+//			MOD_PDU_RTT_LOG(0,"BLE OFF \n");
 //            message.val   = debugu8Option;
 //            message.state = BLE_DICONNECT_STATE;
 //            message.op    = BLE_REMIND;
@@ -473,6 +474,7 @@ static uint8 Analysis_Link(ble_msg_t *protocal)
 //        appMsg.id   = APP_CACEH_DATA_SAVE;
 //        appMsg.para = CACHE_SYSTERM_TYPE;
 //        App_Task_EventSet(appMsg);
+		 MOD_PDU_RTT_LOG(0,"PROT_LINKLOSS_REMIND_SWITCH \n");
      }
      else
      {

@@ -298,7 +298,7 @@ static void exactle_stack_init(void)
 
     if (wsfBufMemLen > sizeof(g_pui32BufMem))
     {
-        SEGGER_RTT_printf(0,"Memory pool is too small by %d\r\n",wsfBufMemLen - sizeof(g_pui32BufMem));
+        Err_Info((0,"Memory pool is too small by %d\r\n",wsfBufMemLen - sizeof(g_pui32BufMem)));
     }
 
     // Initialize the WSF security service.
@@ -439,7 +439,6 @@ void RadioTask(void *pvParameters)
 
     while (1)
     {
-        SEGGER_RTT_printf(0,"radio task\n");
         // Calculate the elapsed time from our free-running timer, and update
         // the software timers in the WSF scheduler.
         update_scheduler_timers();

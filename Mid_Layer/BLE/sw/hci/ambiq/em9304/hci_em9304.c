@@ -135,8 +135,7 @@ enum
 // BLE MAC address for the EM radio.
 //
 //*****************************************************************************
-//uint8_t g_BLEMacAddress[6] = {0x01, 0x00, 0x00, 0xCA, 0xEA, 0x80};
-uint8_t g_BLEMacAddress[6] = {0x1c,0x87,0x65,0x23,0x00,0x25};
+uint8_t g_BLEMacAddress[6] = {0x01, 0x00, 0x00, 0xCA, 0xEA, 0x80};
 
 //*****************************************************************************
 //
@@ -307,10 +306,10 @@ static uint32_t queryEM9304Patches(void)
         if ( (g_pEm9304Patches[patch].userBuildNumber == 2)
             && (g_pEm9304Patches[patch].containerID == SLEEP_CLK_PATCH_CONTAINER_ID))
         {
-          uint32_t  ui32PN;
+          //uint32_t  ui32PN;
 
           // Device identification
-          ui32PN = Drv_EM9304_GetChipPN() & AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_PN_M;
+          //ui32PN = Drv_EM9304_GetChipPN() & AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_PN_M;
 #ifdef ENABLE_32K_CLK_FROM_APOLLO
           // Currently only enable this for Apollo2-Blue
           if (1)//(ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLOBL) 
@@ -731,7 +730,8 @@ void hciDrvSetMac(uint8_t *pui8MacAddress)
     // Copy the 6-byte MAC address into our global variable.
     for (len = 0; len < 6; len++)
     {
-        g_BLEMacAddress[len] = *pui8MacAddress++;
+        //mac:0x1C,0x87,0x79,0x2F,0x5D,0x36，设置的值需要反序为0x36,0x5D,0x2F,0x79,0x87,0x1C
+        g_BLEMacAddress[len] = pui8MacAddress[5 - len];
     }
 }
 
@@ -740,7 +740,7 @@ void hciDrvSetMac(uint8_t *pui8MacAddress)
 //*****************************************************************************
 uint8_t *hciDrvGetMac(void)
 {
-#if (HCI_EM9304_DEBUG == 1) 
+#if(HCI_EM9304_DEBUG == 1) 
     uint8 i;
     EM9304_Debug((0,"Mac:\n"));
     for(i = 0; i < 6; i++)

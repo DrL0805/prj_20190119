@@ -35,6 +35,11 @@
 #include "hci_drv_apollo.h"
 #include "dm_api.h"
 
+#include "sm_sys.h"
+#ifndef AM_PART_APOLLO3
+#include "drv_em9304.h"
+#endif
+
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -804,8 +809,22 @@ void AppMasterSecProcDmMsg(dmEvt_t *pMsg)
       break;
 
     case DM_HW_ERROR_IND:
+      #if 0
       HciDrvRadioBoot(0);
       DmDevReset();
+      #else
+      //step 1: power down EM
+      HciDrvRadioShutdown();
+
+      //step 2: restart EM
+      SMDrv_SYS_DelayMs(200);
+      HciDrvRadioBoot(0);
+	  #ifndef AM_PART_APOLLO3
+      Drv_EM9304_EnableInterrupt();
+	  #endif
+      DmDevReset();
+      HciResetSequence();
+      #endif
       break;
 
     default:

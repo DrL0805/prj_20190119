@@ -3,6 +3,25 @@
 
 #include "ble_task.h"
 
+#define MOD_PDU_RTT_DEBUG	3
+#if (1 == MOD_PDU_RTT_DEBUG)	// 错误等级
+#define MOD_PDU_RTT_LOG(...)
+#define MOD_PDU_RTT_WARN(...)
+#define MOD_PDU_RTT_ERR		SEGGER_RTT_printf
+#elif (2 == MOD_PDU_RTT_DEBUG)	// 警告等级
+#define MOD_PDU_RTT_LOG(...)
+#define MOD_PDU_RTT_WARN	SEGGER_RTT_printf
+#define MOD_PDU_RTT_ERR		SEGGER_RTT_printf
+#elif (3 == MOD_PDU_RTT_DEBUG)	// 调试等级
+#define MOD_PDU_RTT_LOG		SEGGER_RTT_printf
+#define MOD_PDU_RTT_WARN	SEGGER_RTT_printf
+#define MOD_PDU_RTT_ERR		SEGGER_RTT_printf
+#else							// 调试关闭
+#define MOD_PDU_RTT_LOG(...)
+#define MOD_PDU_RTT_WARN(...)
+#define MOD_PDU_RTT_ERR(...)
+#endif
+
 
 #define TOTAL_STEP                  0x0407
 #define BLE_BRODCASTNAME_MAXLENGTH  11 

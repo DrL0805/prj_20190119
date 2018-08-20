@@ -22,13 +22,13 @@
 #include "platform_common.h"
 #include "platform_debugcof.h"
 #include "platform_feature.h"
-#include "app_db.h"
+
 #include "wsf_types.h"
 #include "wsf_assert.h"
 #include "bda.h"
 #include "app_api.h"
 #include "app_main.h"
-
+#include "app_db.h"
 #include "app_cfg.h"
 
 #include "mid_extflash.h"   //for BLE passkey
@@ -102,13 +102,41 @@ typedef struct
 
 static Ble_PassKey passkey;
 
+#define	BLE_PAIRING_PASSKEY_ADDR       0x9000
+
+//清除配对信息，Ram和flash中都要清除
+uint8_t AppClearRecList(void)
+{
+//	flash_task_msg_t		flashMsg;
+
+    //step 1:判断是否有配对信息
+    if((*(uint32_t*)(passkey.appdb[0].peerAddr) == 0xFFFFFFFF) && (*(uint32_t*)(passkey.appdb[1].peerAddr) == 0xFFFFFFFF) && \
+       (*(uint32_t*)(passkey.appdb[2].peerAddr) == 0xFFFFFFFF))
+    {
+        return TRUE;
+    }
+
+    //step 2:擦除flash中保存的判断信息
+//	flashMsg.id 	= EXTFLASH_ID;
+//	flashMsg.flash.extflashEvent.para.startAddr 	= BLE_PAIRING_PASSKEY_ADDR;
+//	flashMsg.flash.extflashEvent.para.dataAddr 		= (uint8*)(NULL);
+//	flashMsg.flash.extflashEvent.para.length 		= 4096;		
+//	flashMsg.flash.extflashEvent.para.endAddr 		= flashMsg.flash.extflashEvent.para.startAddr + flashMsg.flash.extflashEvent.para.length - 1;
+//	flashMsg.flash.extflashEvent.id 				= EXTFLASH_EVENT_4K_ERASE;	
+//	flashMsg.flash.extflashEvent.para.result		= FlashTask_EventSet(&flashMsg);
+
+    //step 3: 清除ram中配对信息
+    memset(appDb.rec,0x00,sizeof(appDbRec_t));
+    return TRUE;
+}
+
 // Copy Record list from NVM into the active record list, if any
 void AppCopyRecListInNvm(appDbRec_t *pRecord)
 {
 //    extflash_para_t extflash;
     uint8_t i; 
 
-//    //step 1: Get passkey
+    //step 1: Get passkey
 //    extflash.dataAddr = (uint8*)&passkey;
 //    extflash.length = sizeof(Ble_PassKey);
 //    extflash.result =0;

@@ -702,13 +702,13 @@ static void appSlaveRemoteConnParamReq(dmEvt_t *pMsg, appConnCb_t *pCb)
     connSpec.supTimeout = pMsg->remConnParamReq.timeout;
     connSpec.minCeLen = connSpec.maxCeLen = 0;
 
-    /* accept the remote device抯 request to change connection parameters */
+    /* accept the remote device’s request to change connection parameters */
     DmRemoteConnParamReqReply(pCb->connId, &connSpec);
   }
   /* if configured to reject the remote connection parameter request */
   else if (pAppSlaveReqActCfg->remConnParamReqAct == APP_ACT_REJECT)
   {
-    /* reject the remote device抯 request to change connection parameters */
+    /* reject the remote device’s request to change connection parameters */
     DmRemoteConnParamReqNegReply(pCb->connId, HCI_ERR_UNSUP_FEAT);
   }
   /* else - app will handle the remote connection parameter request */
@@ -1264,6 +1264,9 @@ void AppSlaveProcDmMsg(dmEvt_t *pMsg)
       Drv_EM9304_EnableInterrupt();
       #endif
       DmDevReset();
+      //fix :做如上复位动作后，协议栈task有概率不能正常跑
+      HciResetSequence();
+      //fix :2018.7.2
 #endif
       break;
 

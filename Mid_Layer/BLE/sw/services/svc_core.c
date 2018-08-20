@@ -19,6 +19,7 @@
  *  to any use, copying or further distribution of this software.
  */
 /*************************************************************************************************/
+#include "platform_feature.h"
 
 #include "wsf_types.h"
 #include "att_api.h"
@@ -42,11 +43,13 @@
 #define CORE_SEC_PERMIT_WRITE SVC_SEC_PERMIT_WRITE
 #endif
 
+//fix : 带气压的手表，在ios手机上未修改蓝牙名时，获取到的广播名是"Watch X"
 /*! Default device name */
-#define CORE_DEFAULT_DEV_NAME       "Watch X"
+#define CORE_DEFAULT_DEV_NAME    BLE_ADV_LOCALNAME
 
 /*! Length of default device name */
-#define CORE_DEFAULT_DEV_NAME_LEN   7
+#define CORE_DEFAULT_DEV_NAME_LEN   BLE_ADV_LOCALNAME_LEN
+//fix : 2018.7.7
 
 /**************************************************************************************************
  GAP group
@@ -61,7 +64,7 @@ static const uint8_t gapValDnCh[] = {ATT_PROP_READ, UINT16_TO_BYTES(GAP_DN_HDL),
 static const uint16_t gapLenDnCh = sizeof(gapValDnCh);
 
 /* device name */
-static uint8_t gapValDn[ATT_DEFAULT_PAYLOAD_LEN] = CORE_DEFAULT_DEV_NAME;
+static uint8_t gapValDn[ATT_DEFAULT_PAYLOAD_LEN] = {CORE_DEFAULT_DEV_NAME,'\0'};
 static uint16_t gapLenDn = CORE_DEFAULT_DEV_NAME_LEN;
 
 /* appearance characteristic */

@@ -35,6 +35,11 @@
 #include "hci_drv_apollo.h"
 #include "dm_api.h"
 
+#ifndef AM_PART_APOLLO3
+#include "drv_em9304.h"
+#endif
+#include "sm_sys.h"
+
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -166,12 +171,29 @@ void hciCmdInit(void)
 /*************************************************************************************************/
 void hciCmdTimeout(wsfMsgHdr_t *pMsg)
 {
-  HCI_TRACE_INFO0("hciCmdTimeout");
-  // When it times out, pretty much we have to
-  // reset/reboot controller and initialize HCI
-  // layer and SPI transport layer again.
-  HciDrvRadioBoot(0);
-  DmDevReset();
+    //SEGGER_RTT_printf(0,"\n hciCmdTimeout\n");
+    // When it times out, pretty much we have to
+    // reset/reboot controller and initialize HCI
+    // layer and SPI transport layer again.
+
+#if 0
+    HciDrvRadioBoot(0);
+    DmDevReset();
+#else  
+    //step 1: power down EM
+    HciDrvRadioShutdown();
+  
+    //step 2: restart EM
+    SMDrv_SYS_DelayMs(100);
+    HciDrvRadioBoot(0);
+	#ifndef AM_PART_APOLLO3
+    Drv_EM9304_EnableInterrupt();
+	#endif
+    DmDevReset();
+    //fix :出现hciCmdTimeout，reset后协议栈也不能正常工作，需reset HCI
+    HciResetCmd();  //HCI reset command
+    //fix :2018.7.2
+#endif
 }
 
 /*************************************************************************************************/

@@ -43,8 +43,8 @@ static void Bsp_Init(void)
 	Mid_SleepScene_Init();
 	Mid_SportScene_Init();
 	
-//	App_Protocal_Init();
-//	Mid_Ble_Init();
+	App_Protocal_Init();
+	Mid_Ble_Init();
 	
 	Mod_Sys_Init();
 }

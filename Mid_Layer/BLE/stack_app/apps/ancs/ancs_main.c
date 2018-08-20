@@ -859,6 +859,10 @@ void m_ble_profileAnccAttrCback(active_notif_t* pAttr)
         {
             Ble_Debug((0,"* Positive Action = \n"));
             Ble_Debug((0,"%s\n",&(pAttr->attrDataBuf[pAttr->parseIndex])));
+            if(m_ble_ancs_app_attr_process_handler != NULL)
+            {
+                m_ble_ancs_app_attr_process_handler(&(pAttr->attrDataBuf[pAttr->parseIndex]),pAttr->attrLength,POSITIVE_ACTION);
+            }
         }
     }
     else if (pAttr->attrId == BLE_ANCS_NOTIF_ATTR_ID_NEGATIVE_ACTION_LABEL)
@@ -867,6 +871,10 @@ void m_ble_profileAnccAttrCback(active_notif_t* pAttr)
         {
             Ble_Debug((0,"* Negative Action = \n"));
             Ble_Debug((0,"%s\n",&(pAttr->attrDataBuf[pAttr->parseIndex])));
+            if(m_ble_ancs_app_attr_process_handler != NULL)
+            {
+                m_ble_ancs_app_attr_process_handler(&(pAttr->attrDataBuf[pAttr->parseIndex]),pAttr->attrLength,NEGATIVE_ACTION);
+            }
         }
     }
 }
@@ -901,6 +909,30 @@ void Ble_Ancs_RejectCall(void)
     AncsPerformNotiAction(anccCb.hdlList, incall_notify_uid, BLE_ANCS_NOTIF_ACTION_ID_NEGATIVE);
 }
 
+//fix 3: 增加手机删除消息同步处理问题
+void anccNotiRemoveCback(ancc_notif_t* pAttr)
+{
+    Ble_Debug((0,"Nofity removed, event_id = %d\n", pAttr->event_id));
+    Ble_Debug((0,"Nofity removed, category_id = %d\n", pAttr->category_id));
+    Ble_Debug((0,"Nofity removed, notification_uid = %d\n", pAttr->notification_uid));
+
+    //fix : 各个模式之中的循环显示，不是循环一次后息屏而是一直重复循环。原因:取消应用消息时也被当成取消来电
+    if((pAttr->event_id == BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED) && (pAttr->category_id == BLE_ANCS_CATEGORY_ID_INCOMING_CALL)) //手机拒接或接听来电
+    {
+        Ble_Debug((0,"* Category        = removed InCall\n"));
+        if(m_ble_ancs_app_id_process_handler!=NULL)
+        {
+            const uint8_t MissCalllingIdentifier[] =     {"com.apple.mobilephone_miss_calling"};
+            m_ble_ancs_app_id_process_handler(MissCalllingIdentifier,sizeof(MissCalllingIdentifier)-1,BLE_ANCS_EVENT_ID_NOTIFICATION_REMOVED);
+            if(m_ble_ancs_app_attr_process_handler != NULL)
+            {
+                m_ble_ancs_app_attr_process_handler(MissCalllingIdentifier,sizeof(MissCalllingIdentifier)-1,START_GET_APP_ID);
+            }
+        }
+    }
+}
+//fix 3: 2018.6.12
+
 /*************************************************************************************************/
 /*!
  *  \fn     AncsStart
@@ -923,7 +955,9 @@ void AncsStart(void)
     AppDiscRegister(m_ble_profileDiscCback);
 
     // Register for ancc callbacks
-    AnccCbackRegister(m_ble_profileAnccAttrCback, m_ble_profileAnccNotifCback);
+    //fix 3: 增加手机删除消息同步处理问题
+    AnccCbackRegister(m_ble_profileAnccAttrCback, m_ble_profileAnccNotifCback,anccNotiRemoveCback);
+    //fix 3: 2018.6.12
 
     /* Initialize attribute server database */
     SvcCoreAddGroup();

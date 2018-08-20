@@ -2,6 +2,7 @@
 #define __BLE_STACK__H
 
 #include "platform_common.h"
+#include "mid_common.h"
 
 #define BT_ADV_OFF   0X00    //关蓝牙广播，蓝牙关闭状态
 #define BT_ADV_ON    0X01    //开蓝牙广播，蓝牙开启状态
@@ -40,6 +41,7 @@ typedef enum
 	BLE_POWERONOFF,             //蓝牙模块上电/掉电
 	BLE_AVD_NAME_SET,           //设置广播名
     BLE_LINKINTV_SET,           //设置连接间隔
+    BLE_CLEAR_PAIRNG_INFO,      //清除配对信息，IOS配对时保存的信息
 	BLE_UNKNOW,                 //未知类型
 }Ble_Interact_Type;
 
@@ -126,7 +128,7 @@ extern void BLE_Stack_SetMode(uint8 u8Mode);
 
 //**********************************************************************
 // 函数功能: 初始化并创建BLE协议栈消息事件处理任务
-// 输入参数：无
+// 输入参数：
 // 返回参数：无
 //**********************************************************************
 extern void BLE_Stack_Init(void);

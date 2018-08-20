@@ -7,7 +7,7 @@
 **  fix 2:  2018.5.31 开机后进仓储，蓝牙开广播，后power off引起的问题
 **  fix 3:  2018.6.5  修改广播参数定义方式
 **  fix 4:  2018.6.12 修改在OTA中频繁消息提醒，导致升级失败
-**  fix 5:  2018.
+**  fix 5:  2018.6.26 电量低于10%，自动进入走针模式，除指针走时外所有功能关闭，实际手表的蓝牙未关闭
 **
 **********************************************************************/
 #include "platform_common.h"
@@ -39,8 +39,13 @@
 #include "app_m_ble_profile.h"
 #include "amotas_api.h"
 
+#ifdef AM_PART_APOLLO3
+#include "hci_drv_apollo3.h"
+#include "hci_drv_apollo.h"
+#else
 #include "hci_em9304.h"
-//#include "drv_em9304.h"
+#include "drv_em9304.h"
+#endif
 #include "BLE_Stack.h"
 #include "radio_task.h"
 
@@ -169,7 +174,7 @@ ble_echo pBleStatus_Echo = NULL;
 static const appAdvCfg_t m_ble_profileAdvCfg =
 {
     {    0,     0,     0},                  /*! Advertising durations in ms */   //默认60000
-    {  1600,     0,     0}                   /*! Advertising intervals in 0.625 ms units */
+    {  800,     0,     0}                   /*! Advertising intervals in 0.625 ms units */
 };
 
 /*! configurable parameters for slave */
@@ -371,7 +376,10 @@ static void send_ancs_msg(ANCS_EVENT_TYPE type,uint8_t action_type)
         break;
     case TYPE_ANCS_MSG_INCALL:
         msg_bit = ANCS_MSG_INCALL & ancs_msg_bitmap;
-        break;        
+        break;
+    case TYPE_ANCS_MSG_MISSCALL:
+        msg_bit = ANCS_MSG_MISSCALL & ancs_msg_bitmap;
+        break;
     case TYPE_ANCS_MSG_INCALL_KNOW:
         msg_bit = (ANCS_MSG_INCALL_KNOW | ANCS_MSG_INCALL) & ancs_msg_bitmap;
         break;
@@ -380,7 +388,6 @@ static void send_ancs_msg(ANCS_EVENT_TYPE type,uint8_t action_type)
         break;
     }
 
-   
     if (msg_bit != 0)
     {
         uint8_t volatile idx = 0;
@@ -465,7 +472,7 @@ static void ios_msg_detail_state_process(const uint8_t *value,uint8_t lenth,GET_
         lenth_temp = (lenth > APPID_TEMP_MAX_LEN)? APPID_TEMP_MAX_LEN : lenth;    
         memcpy(&msg_detail_temp.app_id_buf[0],&value[0],lenth_temp) ;
         msg_detail_temp.app_id_len = lenth_temp;
-        Ble_Debug((0,"APP_ID :%s LEN :%d\n",msg_detail_temp.app_id_buf,msg_detail_temp.title_len));                  
+        Ble_Debug((0,"APP_ID :%s LEN :%d\n",msg_detail_temp.app_id_buf,msg_detail_temp.app_id_len));                  
         msg_op_flag |= (1<<0);
         break;
     case GET_TITLE :
@@ -474,7 +481,7 @@ static void ios_msg_detail_state_process(const uint8_t *value,uint8_t lenth,GET_
         msg_detail_temp.title_buf[lenth_temp] = '\0'; //
         msg_detail_temp.title_len = lenth_temp + 1;
         Ble_Debug((0,"TITLE :%s LEN :%d\n",msg_detail_temp.title_buf,msg_detail_temp.title_len));
-        msg_op_flag |= (1<<1);         
+        msg_op_flag |= (1<<1);
         break;
     case GET_SUBTITLE :
         if(lenth != 0)
@@ -494,11 +501,17 @@ static void ios_msg_detail_state_process(const uint8_t *value,uint8_t lenth,GET_
         msg_detail_temp.msg_len = lenth_temp + 1;
         Ble_Debug((0,"MSG :%s LEN :%d\n",msg_detail_temp.msg_buf,msg_detail_temp.msg_len));         
         msg_op_flag |= (1<<3);
-        break;        
+        break;
+    //fix : QQ来电或QQ视频时，没有标题信息，但有ACTION信息
+    case POSITIVE_ACTION:  //
+    case NEGATIVE_ACTION: 
+        msg_op_flag |= (1<<4);
+        break;
+    //fix : 2018.7.19
     }
      
     Ble_Debug((0,"msg_op_flag  :%d\n",msg_op_flag));     
-    if(msg_op_flag == 0x0F)
+    if((msg_op_flag == 0x0F) || (msg_op_flag >= 0x19))   //0x19:有app ID，有消息，有行为
     {
         msg_op_flag =0;
         ancs_msg_detail_temp.len = 0; 
@@ -659,10 +672,15 @@ static uint8 app_m_ble_isoff(void)
 
 static void Ble_PowerOnOff(uint8_t u8status)
 {
+    //避免重复操作
+    if(((u8BtStatus == BT_ADV_ON) && (u8status == BT_POWERON)) || \
+       ((u8BtStatus == BT_POWEROFF) && (u8status == BT_POWEROFF)))
+        return;
+
     if(u8status == BT_POWERON)     //开蓝牙
     {
         Ble_Debug((0,"BT_POWERON \n"));
-        SMDrv_SYS_DelayMs(200);
+        SMDrv_SYS_DelayMs(100);
         HciDrvRadioBoot(0);
         #ifndef AM_PART_APOLLO3
         Drv_EM9304_EnableInterrupt();
@@ -671,14 +689,19 @@ static void Ble_PowerOnOff(uint8_t u8status)
         //fix 2:开机后进仓储，蓝牙开广播，后power off引起的问题
         u8StackStatus = BLE_STACK_ON;
         //fix 2018.5.31
+
+        //fix 6: 电量低于10%，自动进入走针模式，除指针走时外所有功能关闭，实际手表的蓝牙未关闭
+        //在power on之后蓝牙处于广播状态
+        u8BtStatus = BT_ADV_ON;
+        //fix :2018.6.26
     }
     else                           //关蓝牙
     {
         Ble_Debug((0,"BT_POWEROFF \n"));
         SMDrv_SYS_DelayMs(100);
         HciDrvRadioShutdown();
+        u8BtStatus = BT_POWEROFF;
     }
-    u8BtStatus = u8status;
 }
 
 static void Ble_SetStatus(uint8_t u8status)
@@ -696,9 +719,9 @@ static void Ble_SetStatus(uint8_t u8status)
         {
             AppConnClose(connId);
         }
-        
+
         AppAdvStop();
-    }    
+    }
     u8BtStatus = u8status;
 }
 
@@ -946,7 +969,7 @@ void app_m_ble_handler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
     //step 2: 处理客制化事件
     switch(pMsg->event)
     {
-     case APP_SEND_ANCS_MSG_TIMEOUT_IND :
+    case APP_SEND_ANCS_MSG_TIMEOUT_IND :
         send_ancs_msg_detail_timerout_handler();
         break;
     case DM_RESET_CMPL_IND:
@@ -1075,6 +1098,10 @@ ret_type BLE_Stack_Interact(Ble_Interact_Type type,uint8 *param,uint8 option)
     {
         BLE_SetConnInterval(param[0]);
     }
+    else if(type == BLE_CLEAR_PAIRNG_INFO)
+    {
+        AppClearRecList();
+    }
     else
         ;
     return Ret_OK;
@@ -1197,7 +1224,7 @@ ret_type BLE_Stack_SetMac(uint8 *mac_buf)
     //设置MAC地址
     for(u8index = 0; u8index < 6; u8index++)
     {
-        adv_data[17 - u8index] = mac_buf[u8index];
+        adv_data[12 + u8index] = mac_buf[u8index];
     }
     //fix 3: 2018.6.5
 

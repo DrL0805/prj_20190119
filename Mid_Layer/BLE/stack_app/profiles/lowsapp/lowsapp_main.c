@@ -169,7 +169,6 @@ uint8_t lowsapp_write_cback(dmConnId_t connId, uint16_t handle, uint8_t operatio
     }
     //fix: 2018.6.12
 
-#if 0
     if(handle == LOWSAPP_CH2_HDL)
     {
         //SEGGER_RTT_printf(0,"data from CH2 len : %d\n",len);
@@ -196,13 +195,6 @@ uint8_t lowsapp_write_cback(dmConnId_t connId, uint16_t handle, uint8_t operatio
     }
     else
         ;
-#else
-     if(handle == LOWSAPP_CH2_HDL || (handle == LOWSAPP_CH1_HDL))
-     {
-         lowsapp_send_data(pValue, len,SEND_CHANNEL_CMD);
-     }
-#endif
-    
     return ATT_SUCCESS;
 }
 

@@ -81,6 +81,8 @@ typedef enum
     GET_TITLE,
     GET_SUBTITLE,
     GET_MSG,
+    POSITIVE_ACTION,
+    NEGATIVE_ACTION,
     MSG_OP_END
 }GET_MSG_OP_STATE;
   

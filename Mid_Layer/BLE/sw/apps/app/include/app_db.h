@@ -48,6 +48,8 @@ typedef void *appDbHdl_t;
   Function Declarations
 **************************************************************************************************/
 
+//清除配对信息
+uint8_t AppClearRecList(void);
 int32_t AppSaveNewRecInNvm(uint8_t handle, appDbHdl_t hdl);
 
 /*************************************************************************************************/

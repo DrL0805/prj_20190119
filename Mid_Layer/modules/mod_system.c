@@ -10,7 +10,7 @@ void Mod_Sys_Init(void)
 	Mid_SportScene_Start();	
 }
 
-
+// 长按开机上电
 void Mod_Sys_PwrOn(void)
 {
 	Mid_Rtc_Start();
@@ -19,5 +19,8 @@ void Mod_Sys_PwrOn(void)
 	Mid_SleepScene_Start();		
 }
 
-
-
+// 长按进入仓储
+void Mod_Sys_PwrOff(void)
+{
+	
+}
