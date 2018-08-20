@@ -57,7 +57,7 @@ void App_Window_LockWinCnt(void)
 {
 	AppWinParam.LockWinCnt++;
 	
-	APP_WIN_RTT_LOG(0,"LockWinCnt %d \n",AppWinParam.LockWinCnt);
+//	APP_WIN_RTT_LOG(0,"LockWinCnt %d \n",AppWinParam.LockWinCnt);
 	
 	// 锁屏到时，发送锁屏事件
 	if((AppWinParam.LockWinCnt > APP_WIN_LOCK_TIMEOUT) && (eLockWinHandle != AppWinParam.CurrWinHanle))

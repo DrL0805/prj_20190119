@@ -13,6 +13,9 @@ void Mod_Sys_Init(void)
 // 长按开机上电
 void Mod_Sys_PwrOn(void)
 {
+	App_Protocal_BleStateSet(BLE_POWERON);
+	bleState = BLE_BROADCAST;	
+	
 	Mid_Rtc_Start();
 	
 //	Mid_SportScene_Start();	

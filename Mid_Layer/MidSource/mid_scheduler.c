@@ -156,13 +156,20 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 	MID_SCHD_RTT_LOG(0,"Schd Msg Key %d %d \r\n", Msg->Id, Msg->Param.Key.Val);
 	KeyTest();
 	
-	// 向上层发送按键消息
-	App_Win_Msg_T WinMsg;
-	WinMsg.MenuTag = eWinMenukey;	
-	WinMsg.val = Msg->Param.Key.Val;
-	
-	App_Win_TaskEventSet(&WinMsg);
-	
+	if (phoneState.state == PHONE_STATE_AUTHOR)
+	{
+		phoneState.state = PHONE_STATE_NORMAL;
+		App_Protocal_AuthorPass();
+	}
+	else
+	{
+		// 向上层发送按键消息
+		App_Win_Msg_T WinMsg;
+		WinMsg.MenuTag = eWinMenukey;	
+		WinMsg.val = Msg->Param.Key.Val;
+		
+		App_Win_TaskEventSet(&WinMsg);		
+	}
 }
 
 static void Mid_Schd_AccelHandler(Mid_Schd_TaskMsg_T* Msg)

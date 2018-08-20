@@ -9,6 +9,51 @@ static QueueHandle_t 	sTime_QueueHandle;				// 队列句柄
 #define 	TIME_TASK_QUEUE_WAIT_TICK		100			// 队列阻塞时间
 #define		TIME_TASK_QUEUE_SIZE				sizeof(Mod_Time_TaskMsg_T)
 
+// RTC每秒调用事件处理
+static inline void Mod_Time_RTCSecHandler(void)
+{
+	//Mid_Rtc_TimeRead(&tRTCTime);
+	//MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
+
+	// 每秒检测一次锁屏事件
+	App_Window_LockWinCnt();
+
+	//有与手机强关联状态
+	if (phoneState.state != PHONE_STATE_NORMAL)
+	{
+		phoneState.timeCnt++;
+
+		if (phoneState.timeCnt > phoneState.timeMax)
+		{
+			switch(phoneState.state)
+			{
+				case PHONE_STATE_PHOTO:	// 拍照
+					//						message.state   = EXIT_TAKE_PHOTO_MODE;
+					//						message.op      = TAKE_PHOTO_REMIND;
+					//						WinDowHandle    = App_Window_Process(WinDowHandle,TAG_REMIND,message);
+					break;
+				case PHONE_STATE_AUTHOR:
+					MOD_TIME_RTT_LOG(0,"PHONE_STATE_AUTHOR TimeOut \r\n");		// 授权超时
+					break;
+				case PHONE_STATE_PAIRE:
+					// message.state = EXIT_PAIRE_STATE;
+					// message.op    = PAIRE_REMIND;
+					// WinDowHandle  = App_Window_Process(WinDowHandle,TAG_REMIND,message);
+					break;
+				case PHONE_STATE_HRM:
+					//关闭实时心率场景（启动怀关闭需要成对出现）
+					//						msg.id                                  = HEARTRATE_ID;     
+					//						msg.module.hrmEvent.id                  = HRM_STOP;
+					//						MultiModuleTask_EventSet(msg); 
+					break;
+				default: break;
+			}
+			phoneState.state    = PHONE_STATE_NORMAL,
+			phoneState.timeCnt  = 0;
+		} 
+	}	
+}
+
 //**********************************************************************
 // 函数功能: 按键调度任务处理函数
 // 输入参数：
@@ -22,11 +67,7 @@ static void Mod_Time_RTCHandler(Mod_Time_TaskMsg_T*	Msg)
 		case eMidRTCMsgHalfSec:
 			break;
 		case eMidRTCMsgSec:
-			Mid_Rtc_TimeRead(&tRTCTime);
-//			MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
-
-			// 每秒检测一次锁屏事件
-			App_Window_LockWinCnt();
+			Mod_Time_RTCSecHandler();
 			break;
 		case eMidRTCMsgMin:
 			Mid_Rtc_TimeRead(&tRTCTime);

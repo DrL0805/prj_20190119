@@ -45,6 +45,8 @@ static void Bsp_Init(void)
 	
 	App_Protocal_Init();
 	Mid_Ble_Init();
+//    App_Protocal_BleStateSet(BLE_POWEROFF);
+    bleState = BLE_POWEROFF;
 	
 	Mod_Sys_Init();
 }

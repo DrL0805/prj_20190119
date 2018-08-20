@@ -591,30 +591,33 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
     break;
 
     case PROT_PROD_AUTH:    //0x05: 授权
-    if(protocal->packet.att.load.content.parameter[0] == 0x00)  //apply author
-    {
-            //step 1:send ACK
-            App_Ble_UpdateConnStatus(APP_PROTOCAL_RECVAUTHREQEST);
-            Protocal_SendACK(protocal, SUCCESS);
+		if(protocal->packet.att.load.content.parameter[0] == 0x00)  //apply author
+		{
+			//step 1:send ACK
+			App_Ble_UpdateConnStatus(APP_PROTOCAL_RECVAUTHREQEST);
+			Protocal_SendACK(protocal, SUCCESS);
 
-            //step 2:set author phonestate
+			//step 2:set author phonestate
 			phoneState.timeCnt  = 0;
-            phoneState.timeMax  = APP_AuthorTimeOut;
-            phoneState.state    = PHONE_STATE_AUTHOR;
-//            MultiModuleTask_EventSet(AUTHOR_MOTO);
-        }
-    else if(protocal->packet.att.load.content.parameter[0] == 0x01)  //enforce author
-    {
-        App_Ble_UpdateConnStatus(APP_PROTOCAL_RECVAUTHREQEST);
-        Protocal_SendACK(protocal, SUCCESS); 
-		App_Protocal_AuthorPass();
-        phoneState.state = PHONE_STATE_NORMAL;  
-		phoneState.timeCnt  = 0;		
-    }
-    else
-    {
-        Protocal_SendACK(protocal, PARAMATER_ERROR);
-    }
+			phoneState.timeMax  = APP_AuthorTimeOut;
+			phoneState.state    = PHONE_STATE_AUTHOR;
+
+			// 马达震动提示授权
+			Mid_Motor_ParamSet(eMidMotorShake4Hz, 2);
+			Mid_Motor_ShakeStart();			
+		}
+		else if(protocal->packet.att.load.content.parameter[0] == 0x01)  //enforce author
+		{
+			App_Ble_UpdateConnStatus(APP_PROTOCAL_RECVAUTHREQEST);
+			Protocal_SendACK(protocal, SUCCESS); 
+			App_Protocal_AuthorPass();
+			phoneState.state = PHONE_STATE_NORMAL;  
+			phoneState.timeCnt  = 0;		
+		}
+		else
+		{
+			Protocal_SendACK(protocal, PARAMATER_ERROR);
+		}
     break;
 
     case PROT_PROD_SN:  //0x06

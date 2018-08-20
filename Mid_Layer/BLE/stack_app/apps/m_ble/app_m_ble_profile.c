@@ -156,7 +156,7 @@ static uint32_t ios_msg_bitmap_switch = 0;
 static uint8_t  send_flow = 0;
 
 static uint8_t u8BtStatus = BT_ADV_OFF;      //记录蓝牙连接状态,开机在仓储状态下为非广播
-static uint8 u8StackStatus = BLE_STACK_ON;//BLE_STACK_BOOT; //蓝牙开机时视为在boot状态，在power on动作之后才是ON
+static uint8 u8StackStatus = BLE_STACK_BOOT; //BLE_STACK_ON;////蓝牙开机时视为在boot状态，在power on动作之后才是ON
 
 #if(BLE_STACK_RUN_INMCU == 1)
 ble_echo pBleStatus_Echo = NULL;

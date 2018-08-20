@@ -6,7 +6,6 @@
 
 #include "system_task.h"
 
-
 #include "drv_touch.h"
 #include "module_test.h"
 #include "SEGGER_RTT.h"
@@ -34,6 +33,8 @@
 #include "app_lcd.h"
 #include "App_win_process.h"
 #include "app_protocal.h"
+
+#include "app_variable.h"
 
 #endif
 
