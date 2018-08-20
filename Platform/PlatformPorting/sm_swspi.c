@@ -19,16 +19,19 @@
 //**********************************************************************
 ret_type SMDrv_SWSPI_Open(void)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 ret;
 
     bfGpioCfg.uFuncSel       = 3;
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
-    am_hal_gpio_pinconfig(SW_SPI_CLK, bfGpioCfg);
+    if((ret = am_hal_gpio_pinconfig(SW_SPI_CLK, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - swspi sck open config failed:%d\n",ret));
     am_hal_gpio_output_clear(SW_SPI_CLK);
 
     //d1
-    am_hal_gpio_pinconfig(SW_SPI_MOSI, bfGpioCfg);
+    if((ret = am_hal_gpio_pinconfig(SW_SPI_MOSI, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - swspi mosi open config failed:%d\n",ret));
     return Ret_OK;
 }
 
@@ -39,13 +42,16 @@ ret_type SMDrv_SWSPI_Open(void)
 //**********************************************************************
 ret_type SMDrv_SWSPI_Close(void)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 ret;
 
     bfGpioCfg.uFuncSel       = 3,
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
-    am_hal_gpio_pinconfig(SW_SPI_CLK, bfGpioCfg);
-    am_hal_gpio_pinconfig(SW_SPI_MOSI, bfGpioCfg);
+    if((ret = am_hal_gpio_pinconfig(SW_SPI_CLK, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - swspi sck close config failed:%d\n",ret));
+    if((ret = am_hal_gpio_pinconfig(SW_SPI_MOSI, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - swspi mosi close config failed:%d\n",ret));
     return Ret_OK;
 }
 

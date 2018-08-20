@@ -13,6 +13,9 @@
 #define KEY_MODULE
 #define COMMON_MODULE
 #define IIC_MODULE
+#define TEM_MODULE
+#define ADC_MODULE
+
 
 //GPIO
 #ifdef SWD_MODULE
@@ -123,7 +126,8 @@
 
 //定义ADC
 #ifdef ADC_MODULE
-#define ADC_PIN       IO_UNKNOW
+#define BAT_ADC_PIN       IO_UNKNOW
+#define TEMP_ADC_PIN      35
 #endif
 
 //UART 需要在使用到uart的文件中定义宏 UART_MODULE

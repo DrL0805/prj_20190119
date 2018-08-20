@@ -210,6 +210,25 @@ static void Mid_Schd_MagHandler(Mid_Schd_TaskMsg_T* Msg)
 //	MID_SCHD_RTT_LOG(0,"Gyro: %d, %d, %d \r\n",tData[0],tData[1],tData[2]);
 }
 
+static void Mid_Schd_UartHandler(Mid_Schd_TaskMsg_T* Msg)
+{
+    uint16 u16ReadLen = 0, u16LenWritten;
+    uint8 u8Buffer[128];
+
+	SMDrv_UART_ReadBytes(BASE_UART_MODULE,u8Buffer,32,&u16ReadLen);
+//	SMDrv_UART_WriteBytes(BASE_UART_MODULE,u8Buffer,u16ReadLen,&u16LenWritten);
+//	for(uint32_t i = 0;i < u16ReadLen;i++)
+//	{
+//		MID_SCHD_RTT_LOG(0,"%02X ", u8Buffer[i]);
+//	}MID_SCHD_RTT_LOG(0,"\r\n");
+	
+	// 串口模拟按键、触摸等，调试windows切换逻辑
+	App_Win_Msg_T WinMsg;
+	WinMsg.MenuTag = u8Buffer[0];	// 模拟菜单类型
+	WinMsg.val = u8Buffer[1];		// 模拟菜单值
+	App_Win_TaskEventSet(&WinMsg);
+}
+
 void Mid_Schd_ParamInit(void)
 {
 	// 外设访问互斥信号量创建
@@ -251,6 +270,9 @@ static void Mid_Schd_TaskProcess(void *pvParameters)
 					break;
 				case eSchdTaskMsgMagnetism:
 					Mid_Schd_MagHandler(&Msg);
+					break;
+				case eSchdTaskMsgUart:
+					Mid_Schd_UartHandler(&Msg);
 					break;
 				default:
 					MID_SCHD_RTT_WARN(0,"Schd Msg Err %d \r\n", Msg.Id);

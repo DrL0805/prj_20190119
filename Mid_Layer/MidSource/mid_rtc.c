@@ -239,6 +239,7 @@ void Mid_Rtc_TimeWrite(rtc_time_s *timeTemp)
         rtcTime.sec     = timeTemp->sec;
         rtcTime.zone    = timeTemp->zone;
     }
+	
 	rtcTime.week	= AutoWeek(rtcTime.year, rtcTime.month, rtcTime.day);
 }
 

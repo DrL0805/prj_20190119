@@ -10,7 +10,7 @@
 //#include "mid_magnetism.h"
 #include "mid_accelerate.h"
 #include "mid_gyroscope.h"
-//#include "mid_uart.h"
+#include "mid_uart.h"
 #include "mid_rtc.h"
 //#include "mid_stopwatch.h"
 //#include "mid_nandflash.h"
@@ -40,10 +40,15 @@
 /* Key参数信息 */
 typedef struct
 {
-	eMidKeyVal	Val;
+	eMidKeyVal	Val;	// 键值
 }Mid_Schd_KeyParam_T;
-	
 
+typedef struct
+{
+	uart_module 	Module;		// 串口模块
+	uint8_t 		EventType;	// 事件类型
+}Mid_Schd_UartParam_T;
+	
 /* 中间层任务调度消息类型 */
 typedef enum
 {
@@ -51,6 +56,7 @@ typedef enum
 	eSchdTaskMsgAccel,
 	eSchdTaskMsgGyro,
 	eSchdTaskMsgMagnetism,
+	eSchdTaskMsgUart,
 	eSchdTaskMsgMax,
 }eSchdTaskMsgId;
 
@@ -60,7 +66,8 @@ typedef struct
 	eSchdTaskMsgId	Id;
 	union
 	{
-		Mid_Schd_KeyParam_T	Key;
+		Mid_Schd_KeyParam_T		Key;
+		Mid_Schd_UartParam_T	Uart;
 	}Param;
 }Mid_Schd_TaskMsg_T;
 

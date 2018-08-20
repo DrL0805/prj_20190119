@@ -8,6 +8,7 @@
 #include "am_mcu_apollo.h"
 #include "platform_common.h"
 #include "sm_wdt.h"
+#include "sm_sys.h"
 
 static comm_cb *pWdt_CallBack = NULL;
 
@@ -54,22 +55,21 @@ ret_type SMDrv_WDT_Open(uint16 resetCount,uint16 interruptCount,comm_cb *wdt_cal
     //step 1: setting config to init wdt,include count, enable reset and irq flag
     configTemp.ui16InterruptCount   = interruptCount;
     configTemp.ui16ResetCount       = resetCount;
+#if(defined(AM_PART_APOLLO2) || defined(AM_PART_APOLLO3))
+    configTemp.ui32Config           = WDT_CFG_CLKSEL_128HZ | AM_HAL_WDT_ENABLE_RESET | AM_HAL_WDT_ENABLE_INTERRUPT;
+#else
     configTemp.ui32Config           = AM_HAL_WDT_ENABLE_RESET | AM_HAL_WDT_ENABLE_INTERRUPT;
+#endif
     am_hal_wdt_init(&configTemp);
  
     if(wdt_callback != NULL)
     {
         pWdt_CallBack = wdt_callback;
     }
-    //设置中断优化先级
-    SMDrv_WDT_SetIsrPrio(WDT_PRIO);
 
-    //step 2:enable wdt irq
-#if AM_CMSIS_REGS
-    NVIC_EnableIRQ(WDT_IRQn);
-#else
-    am_hal_interrupt_enable(AM_HAL_INTERRUPT_WATCHDOG);
-#endif
+    //step 2:设置中断优化先级,并启动中断
+    SMDrv_SYS_SetIsrPrio(INTERRUPT_WATCHDOG,WDT_PRIO);
+    SMDrv_SYS_EnableIsr(INTERRUPT_WATCHDOG);
     return Ret_OK; 
 }
 
@@ -95,11 +95,7 @@ ret_type SMDrv_WDT_Close(void)
     pWdt_CallBack = NULL;
     
     //step 3: disable wdt interrupt
-#if AM_CMSIS_REGS
-    NVIC_DisableIRQ(WDT_IRQn);
-#else
-    am_hal_interrupt_disable(AM_HAL_INTERRUPT_WATCHDOG);
-#endif
+    SMDrv_SYS_DisableIsr(INTERRUPT_WATCHDOG);
     return Ret_OK;
 }
 
@@ -111,13 +107,9 @@ ret_type SMDrv_WDT_Close(void)
 //**********************************************************************
 ret_type SMDrv_WDT_SetIsrPrio(uint32 prio)
 {
-#if AM_CMSIS_REGS
-    NVIC_SetPriority(WDT_IRQn,prio);
-    NVIC_EnableIRQ(WDT_IRQn);
-#else
-    am_hal_interrupt_priority_set(AM_HAL_INTERRUPT_WATCHDOG, AM_HAL_INTERRUPT_PRIORITY(prio));
-    am_hal_interrupt_enable(AM_HAL_INTERRUPT_WATCHDOG);
-#endif
+    //step :设置中断优化先级,并启动中断
+    SMDrv_SYS_SetIsrPrio(INTERRUPT_WATCHDOG,prio);
+    SMDrv_SYS_EnableIsr(INTERRUPT_WATCHDOG);
     return Ret_OK;
 }
 

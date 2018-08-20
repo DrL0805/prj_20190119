@@ -6,17 +6,15 @@
 **   V2.0   2018.8.9  增加apollo3  ZSL 
 **
 **********************************************************************/
-#define ADC_MODULE
-
 #include "io_config.h"
 #include "am_mcu_apollo.h"
 #include "sm_adc.h"
 
-#if(ADC_PIN != IO_UNKNOW)
-//define Bat ADC callback
-static adc_cb Bat_Adc_CB;
+#if((BAT_ADC_PIN != IO_UNKNOW) || (TEMP_ADC_PIN != IO_UNKNOW))
+//define ADC callback
+static adc_cb adc_slot_cb[MAX_ADC_MODULE] = {NULL};
 
-#if(SMDRV_ADC_DEBUG ==1)
+#if 1//(SMDRV_ADC_DEBUG ==1)
 #define Adc_Debug(x) SEGGER_RTT_printf x
 #else
 #define Adc_Debug(x)
@@ -34,7 +32,7 @@ static void *g_ADCHandle = NULL;
 //**********************************************************************
 void am_adc_isr(void)
 {
-    uint32 ui32IntMask;
+    uint32 ui32IntMask,u32slot;
     am_hal_adc_sample_t Sample;
 
     // Read the interrupt status.    
@@ -54,12 +52,67 @@ void am_adc_isr(void)
             Err_Info((0,"Error - ADC sample read from FIFO failed.\n"));
 
         Adc_Debug((0,"ADC Slot =  %d\n", Sample.ui32Slot));
-        Adc_Debug((0,"ADC Value = %8.8X\n", Sample.ui32Sample));
-        if((Sample.ui32Slot == BAT_ADC_SLOT) && (Bat_Adc_CB != NULL))
-        {            
-            (Bat_Adc_CB)(Sample.ui32Sample);
+        Adc_Debug((0,"ADC Value = %d\n", Sample.ui32Sample));
+        for(u32slot = 0; u32slot < MAX_ADC_MODULE; u32slot++)
+        {
+            if((Sample.ui32Slot == u32slot) && (adc_slot_cb[u32slot] != NULL))
+            {
+                (adc_slot_cb[u32slot])(Sample.ui32Sample);
+            }
         }
     }
+}
+
+//**********************************************************************
+// 函数功能: 通过Module配置slot Channel，pin
+//**********************************************************************
+static uint8 adc_modul2info(adc_module modul,am_hal_adc_slot_config_t *pSlotConfig,uint32 *adc_pin)
+{
+    if((pSlotConfig == NULL) || (adc_pin == NULL))
+        return FALSE;
+
+    //step 1: config slot,adc pin,需根据模块配置
+    switch(modul)
+    {
+    case BAT_ADC_MODULE:  //BAT Adc
+        pSlotConfig->eMeasToAvg      = AM_HAL_ADC_SLOT_AVG_1;
+        pSlotConfig->ePrecisionMode  = AM_HAL_ADC_SLOT_14BIT;
+        *adc_pin = BAT_ADC_PIN;
+        break;
+    case BODY_TEMP_ADC_MODULE:   //体温，热敏
+        pSlotConfig->eMeasToAvg      = AM_HAL_ADC_SLOT_AVG_1;
+        pSlotConfig->ePrecisionMode  = AM_HAL_ADC_SLOT_14BIT;
+        *adc_pin = TEMP_ADC_PIN;
+        break;
+    default:
+        return FALSE;
+    }
+
+    //step 2: select channel，此部分是mcu决定，无需改动
+    if(*adc_pin == 11)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE2;
+    else if(*adc_pin == 12)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE9;
+    else if(*adc_pin == 13)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE8;
+    else if(*adc_pin == 16)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE0;
+    else if(*adc_pin == 29)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE1;
+    else if(*adc_pin == 31)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE3;
+    else if(*adc_pin == 32)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE4;
+    else if(*adc_pin == 33)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE5;
+    else if(*adc_pin == 34)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE6;
+    else if(*adc_pin == 35)
+        pSlotConfig->eChannel = AM_HAL_ADC_SLOT_CHSEL_SE7;
+    else
+        return FALSE;
+
+    return TRUE;
 }
 
 //**********************************************************************
@@ -69,40 +122,20 @@ void am_adc_isr(void)
 //**********************************************************************
 void SMDrv_ADC_Init(void)
 {
-    // Define the ADC  pin to be used.
-    am_hal_gpio_pincfg_t t_AdcConfig;
-    
-    Bat_Adc_CB = NULL;
-    // Set a pin to act as our ADC input
-    t_AdcConfig.uFuncSel  = 0,  //0 is ADC function sel
-    am_hal_gpio_pinconfig(ADC_PIN, t_AdcConfig);
-}
-
-//*****************************************************************************
-//函数功能：打开一个ADC通道
-// 输入参数：adc_slot：   adc 通道号
-// 			adc_callback: callback函调函数
-// 返回：	无
-//*****************************************************************************
-ret_type SMDrv_ADC_Open(uint32 adc_slot,adc_cb adc_callback)
-{
     am_hal_adc_config_t  ADCConfig;
-    am_hal_adc_slot_config_t ADCSlotConfig;
+    uint32 ret;
 
-    if(adc_callback != NULL)
-    {
-        Bat_Adc_CB = adc_callback;
-    }
+    memset(adc_slot_cb,NULL,sizeof(adc_slot_cb));
 
-    // Initialize the ADC and get the handle.
-    if (am_hal_adc_initialize(0, &g_ADCHandle) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - reservation of the ADC instance failed.\n"));
+    //step 1: Initialize the ADC and get the handle.
+    if((ret = am_hal_adc_initialize(0, &g_ADCHandle)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - reservation of the ADC instance failed:%d\n",ret));
     
-    // Power on the ADC.
-    if (am_hal_adc_power_control(g_ADCHandle,AM_HAL_SYSCTRL_WAKE,false) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - ADC power on failed.\n"));
+    //step 2: Power on the ADC.
+    if((ret = am_hal_adc_power_control(g_ADCHandle,AM_HAL_SYSCTRL_WAKE,false)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - ADC power on failed:%d\n",ret));
     
-    // Set up the ADC configuration parameters. These settings are reasonable
+    //step 3: Set up the ADC configuration parameters. These settings are reasonable
     // for accurate measurements at a low sample rate.
     ADCConfig.eClock             = AM_HAL_ADC_CLKSEL_HFRC;
     ADCConfig.ePolarity          = AM_HAL_ADC_TRIGPOL_RISING;
@@ -110,60 +143,149 @@ ret_type SMDrv_ADC_Open(uint32 adc_slot,adc_cb adc_callback)
     ADCConfig.eReference         = AM_HAL_ADC_REFSEL_INT_2P0;
     ADCConfig.eClockMode         = AM_HAL_ADC_CLKMODE_LOW_POWER;
     ADCConfig.ePowerMode         = AM_HAL_ADC_LPMODE0;
-    ADCConfig.eRepeat            = AM_HAL_ADC_REPEATING_SCAN;
-    if(am_hal_adc_configure(g_ADCHandle, &ADCConfig) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - configuring ADC failed.\n"));
-    
-    // Set up an ADC slot
-    ADCSlotConfig.eMeasToAvg      = AM_HAL_ADC_SLOT_AVG_1;
-    ADCSlotConfig.ePrecisionMode  = AM_HAL_ADC_SLOT_14BIT;
-    ADCSlotConfig.eChannel        = AM_HAL_ADC_SLOT_CHSEL_SE0;
-    ADCSlotConfig.bWindowCompare  = false;
-    ADCSlotConfig.bEnabled        = true;
-    if(am_hal_adc_configure_slot(g_ADCHandle, 0, &ADCSlotConfig) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - configuring ADC Slot 0 failed.\n"));
-    
-    // For this example, the samples will be coming in slowly. This means we
+    ADCConfig.eRepeat            = AM_HAL_ADC_SINGLE_SCAN;
+    if((ret = am_hal_adc_configure(g_ADCHandle, &ADCConfig)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - configuring ADC failed:%d\n",ret));
+
+    //step 4: For this example, the samples will be coming in slowly. This means we
     // can afford to wake up for every conversion.
-    am_hal_adc_interrupt_enable(g_ADCHandle, AM_HAL_ADC_INT_CNVCMP );
- 
-    return Ret_OK;
+    am_hal_adc_interrupt_enable(g_ADCHandle, AM_HAL_ADC_INT_CNVCMP);
 }
 
-//*****************************************************************************
-//函数功能：关闭一个打开的ADC通道
-// 输入参数：adc_slot：   adc 通道号
-// 			adc_callback: callback函调函数
-// 返回：	无
-//*****************************************************************************
-ret_type SMDrv_ADC_Close(void)
+//**********************************************************************
+// 函数功能: 解除ADC
+// 输入参数：
+// 返回参数：
+//**********************************************************************
+void SMDrv_ADC_DeInit(void)
 {
+    uint32 ret;
     if(g_ADCHandle == NULL)
     {
         Err_Info((0,"Error - ADC handle is NULL\n"));
-        return Ret_InvalidParam;
+        return ;
     }
-        
-    Bat_Adc_CB = NULL;
-    //step 1: disable ADC
-    if(am_hal_adc_disable(g_ADCHandle) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - disable ADC failed.\n"));
 
+    //step 1: disable ADC
+    if((ret = am_hal_adc_disable(g_ADCHandle)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - disable ADC failed:%d\n",ret));
+    
     //step 2: disable irq
 #if AM_CMSIS_REGS
     NVIC_DisableIRQ(ADC_IRQn);
 #else
     am_hal_interrupt_disable(AM_HAL_INTERRUPT_ADC);
 #endif
-
+    
     //step 3: Disable ADC power
-    if(am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_ADC) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - disabling the ADC power domain failed.\n"));
+    if((ret = am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_ADC)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - disabling the ADC power domain failed:%d\n",ret));
+    
+    if((ret = am_hal_adc_power_control(g_ADCHandle,AM_HAL_SYSCTRL_DEEPSLEEP,false)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - ADC power on failed:%d\n",ret));
 
     //step 4: deInitialize the ADC
-    if(am_hal_adc_deinitialize(g_ADCHandle) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - return of the ADC instance failed.\n"));
+    if((ret = am_hal_adc_deinitialize(g_ADCHandle)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - return of the ADC instance failed:%d\n",ret));
 
+    g_ADCHandle =NULL;
+}
+
+//*****************************************************************************
+//函数功能：打开一个ADC通道
+// 输入参数：module：module id,同时也是slot ID,因此值需小于8，最多支持8个slot
+// 			adc_callback: callback函调函数
+// 返回：	无
+//*****************************************************************************
+ret_type SMDrv_ADC_Open(adc_module module,adc_cb adc_callback)
+{
+    am_hal_adc_slot_config_t ADCSlotConfig;
+    // Define the ADC  pin to be used.
+    am_hal_gpio_pincfg_t t_AdcConfig ={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 adc_pin;
+    uint32 ret;
+
+    if(module >= MAX_ADC_MODULE)
+    {
+        Err_Info((0,"Error - ADC module error.\n"));
+        return Ret_InvalidParam;
+    }
+    //step 1: get module's slot/pin info
+    if(adc_modul2info(module,&ADCSlotConfig,&adc_pin) == FALSE)
+    {
+        Err_Info((0,"Error - ADC Slot pin error.\n"));
+        return Ret_InvalidParam;
+    }
+
+    //step 2: Set a pin to act as our ADC input
+    t_AdcConfig.uFuncSel  = 0;  //0 is ADC function sel
+    if((ret = am_hal_gpio_pinconfig(adc_pin, t_AdcConfig)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - configuring ADC pin failed:%d\n",ret));
+
+    //step 3: Set up an ADC slot,set callback
+    ADCSlotConfig.bWindowCompare  = false;
+    ADCSlotConfig.bEnabled        = true;
+    if((ret = am_hal_adc_configure_slot(g_ADCHandle, module, &ADCSlotConfig)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - configuring ADC Slot 0 failed=%d\n",ret));
+        return Ret_Fail;
+    }
+
+    if(adc_callback != NULL)
+    {
+        adc_slot_cb[module] = adc_callback;
+    }
+    return Ret_OK;
+}
+
+//*****************************************************************************
+//函数功能：关闭一个打开的ADC通道
+// 输入参数：module：
+// 返回：	无
+//*****************************************************************************
+ret_type SMDrv_ADC_Close(adc_module module)
+{
+    am_hal_adc_slot_config_t ADCSlotConfig;
+    // Define the ADC  pin to be used.
+    am_hal_gpio_pincfg_t t_AdcConfig ={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 adc_pin;
+    uint32 ret;
+
+    if(g_ADCHandle == NULL)
+    {
+        Err_Info((0,"Error - ADC handle is NULL\n"));
+        return Ret_InvalidParam;
+    }
+    if(module >= MAX_ADC_MODULE)
+    {
+        Err_Info((0,"Error - ADC module error.\n"));
+        return Ret_InvalidParam;
+    }
+        
+    //step 1: get module's slot/pin info
+    if(adc_modul2info(module,&ADCSlotConfig,&adc_pin) == FALSE)
+    {
+        Err_Info((0,"Error - ADC Slot pin error.\n"));
+        return Ret_InvalidParam;
+    }
+        
+    //step 2: disable adc pin
+    t_AdcConfig.uFuncSel       = 3;
+    t_AdcConfig.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
+    t_AdcConfig.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
+    if((ret = am_hal_gpio_pinconfig(adc_pin, t_AdcConfig)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - configuring ADC pin failed:%d\n",ret));
+        
+    //step 3: Set up an ADC slot,set callback
+    ADCSlotConfig.bWindowCompare  = false;
+    ADCSlotConfig.bEnabled        = false;     //disable ADC
+    if((ret = am_hal_adc_configure_slot(g_ADCHandle, module, &ADCSlotConfig)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - configuring ADC Slot 0 failed=%d\n",ret));
+        return Ret_Fail;
+    }
+
+    adc_slot_cb[module] = NULL;
     return Ret_OK;
 }
 
@@ -296,7 +418,7 @@ void SMDrv_ADC_Init(void)
 
 //*****************************************************************************
 //函数功能：打开一个ADC通道
-// 输入参数：adc_slot：   adc 通道号
+// 输入参数：adc_slot：   adc 通道号,值小于 8
 // 			adc_callback: callback函调函数
 // 返回：	无
 //*****************************************************************************
@@ -408,14 +530,6 @@ ret_type SMDrv_ADC_SetIsrPrio(uint32 prio)
 #endif
     return Ret_OK;
 }
-#else
-//**********************************************************************
-// 函数功能: 初始化ADC
-// 输入参数：
-// 返回参数：
-//**********************************************************************
-void SMDrv_ADC_Init(void)
-{
-}
+
 #endif
 

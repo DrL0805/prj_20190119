@@ -620,7 +620,7 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
 		}
     break;
 
-    case PROT_PROD_SN:  //0x06
+    case PROT_PROD_SN:  //0x06		
     Protocal_SendACK(protocal, SUCCESS);
     App_Protocal_RetSN(protocal);
     break;
@@ -655,8 +655,6 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
        appRtcTemp.week   = protocal->packet.att.load.content.parameter[8];
 
        Mid_Rtc_TimeWrite(&appRtcTemp);
-//       App_Rtc_Movt();
-       
     }else if (protocal->packet.att.load.content.interfaceType == PROTOCAL_GET)
     {
         Mid_Rtc_TimeRead(&appRtcTemp);

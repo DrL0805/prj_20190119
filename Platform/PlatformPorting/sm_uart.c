@@ -13,6 +13,7 @@
 #include "am_mcu_apollo.h"
 #include "sm_gpio.h"
 #include "string.h"
+#include "sm_sys.h"
 #include "sm_uart.h"
 
 //定义UART口
@@ -26,75 +27,75 @@ enum
 //记录上层注册的callback
 static uart_cb pUart_CallBack[UART_MAX];
 
+//软件定义的缓冲buffer大小，此值可根据实际情况调整
+#define UART1_TXBUFFER_MAX 256
+#define UART1_RXBUFFER_MAX 256
+
 //uart buffer
-uint8_t pui8TxBuffer[256];
-uint8_t pui8RxBuffer[256];
+uint8_t u8TxBuffer[UART1_TXBUFFER_MAX];
+uint8_t u8RxBuffer[UART1_RXBUFFER_MAX];
+
+//uart硬件FIFO大小是32，不可修改
+#define UART_FIFO_SIZE 32
+uint8_t u8fifo[UART_FIFO_SIZE];
 
 #ifdef AM_PART_APOLLO3
-void *pUart0_Handler = NULL;
-void *pUart1_Handler = NULL;
+void *pUart_Handler[2] = {NULL};
 
 //UART0中断服务程序
 void am_uart_isr(void)
 {
-    uint32_t ui32Status, ui32Idle;
+    uint32_t ui32Status;
 
     // Service the FIFOs as necessary, and clear the interrupts.
-    am_hal_uart_interrupt_status_get(pUart0_Handler, &ui32Status, true);
-    am_hal_uart_interrupt_clear(pUart0_Handler, ui32Status);
-    am_hal_uart_interrupt_service(pUart0_Handler, ui32Status, &ui32Idle);
+    am_hal_uart_interrupt_status_get(pUart_Handler[UART_ID0], &ui32Status, true);
+    am_hal_uart_interrupt_clear(pUart_Handler[UART_ID0], ui32Status);
+    am_hal_uart_interrupt_service(pUart_Handler[UART_ID0], ui32Status, NULL);
 
     //UART0接收数据事件
     if (AM_HAL_UART_INT_RX & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_RX);
+//        SEGGER_RTT_printf(0,"Uart rx...\n");		
+        pUart_CallBack[UART_ID0](UART_EVENT_RX);
     }
     //UART0发送数据事件
     if (AM_HAL_UART_INT_TX & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_TX);
+		//SEGGER_RTT_printf(0,"Uart tx...\n");
+        pUart_CallBack[UART_ID0](UART_EVENT_TX);
     }
     //UART0接收数据超时事件
     if (AM_HAL_UART_INT_RX_TMOUT & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_RX_TIMEOUT);
-    }
-
-    if(ui32Idle == true)
-    {
-        ;
+//        SEGGER_RTT_printf(0,"Uart rx timeout...\n");		
+        pUart_CallBack[UART_ID0](UART_EVENT_RX_TIMEOUT);
     }
 }
 
 //UART1中断服务程序
 void am_uart1_isr(void)
 {
-    uint32_t ui32Status, ui32Idle;
+    uint32_t ui32Status;
 
     // Service the FIFOs as necessary, and clear the interrupts.
-    am_hal_uart_interrupt_status_get(pUart1_Handler, &ui32Status, true);
-    am_hal_uart_interrupt_clear(pUart1_Handler, ui32Status);
-    am_hal_uart_interrupt_service(pUart1_Handler, ui32Status, &ui32Idle);
+    am_hal_uart_interrupt_status_get(pUart_Handler[UART_ID1], &ui32Status, true);
+    am_hal_uart_interrupt_clear(pUart_Handler[UART_ID1], ui32Status);
+    am_hal_uart_interrupt_service(pUart_Handler[UART_ID1], ui32Status, NULL);
 
     //UART0接收数据事件
     if (AM_HAL_UART_INT_RX & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_RX);
+        pUart_CallBack[UART_ID1](UART_EVENT_RX);
     }
     //UART0发送数据事件
     if (AM_HAL_UART_INT_TX & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_TX);
+        pUart_CallBack[UART_ID1](UART_EVENT_TX);
     }
     //UART0接收数据超时事件
     if (AM_HAL_UART_INT_RX_TMOUT & ui32Status)
     {
-        //pUart_CallBack[UART0](UART_EVENT_RX_TIMEOUT);
-    }
-
-    if(ui32Idle == true)
-    {
-        ;
+        pUart_CallBack[UART_ID1](UART_EVENT_RX_TIMEOUT);
     }
 }
 
@@ -115,24 +116,14 @@ void SMDrv_UART_Init(void)
 //    ptype_info:要设置的uart中断类型，FIFO类型, 若不需中断，则设置为NULL
 //    ut_callback:上层注册的中断回调函数
 // 返回参数：Ret_InvalidParam或Ret_OK
-//
-// 例子: 使能uart接收发生中断，接收fifo中数据为1/8时触发接收中断
-//      uart_openinfo type_info;
-//      type_info.u32event_type = UART_EVENT_RX | UART_EVENT_TX;
-//      type_info.u32fifo_type =  UART_RX_FIFO_1_8;
-//      SMDrv_UART_Open(GPS_UART_MODULE,&type_info,ut_callback);
 //**********************************************************************
-ret_type SMDrv_UART_Open(uart_module modul,uart_openinfo *ptype_info,uart_cb ut_callback)
+ret_type SMDrv_UART_Open(uart_module modul,uart_cb ut_callback)
 {
-    uint32 u32Modul = UART_MAX,u32RxPin = IO_UNKNOW,u32TxPin = IO_UNKNOW;
+    uint32 u32RxPin = IO_UNKNOW,u32TxPin = IO_UNKNOW;
     uint32 u32TxConfig = 0x00,u32RxConfig = 0x00;
-    am_hal_gpio_pincfg_t g_UartConfig;
-    void *handler = NULL;
-#if AM_CMSIS_REGS
-    IRQn_Type irq;
-#else
-    uint32 irq;
-#endif
+    am_hal_gpio_pincfg_t g_UartConfig = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    interrupt_handle irq_handle;
+    uint8 u8uart_id;
 
     //默认的UART参数
     am_hal_uart_config_t UartConfig = 
@@ -144,7 +135,6 @@ ret_type SMDrv_UART_Open(uart_module modul,uart_openinfo *ptype_info,uart_cb ut_
         .ui32StopBits = AM_HAL_UART_ONE_STOP_BIT,
         .ui32FlowControl = AM_HAL_UART_FLOW_CTRL_NONE,
     };    
-    g_UartConfig.eDriveStrength  = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
 
     //step 1:配置模块UART参数
     if(modul == GPS_UART_MODULE)
@@ -153,19 +143,13 @@ ret_type SMDrv_UART_Open(uart_module modul,uart_openinfo *ptype_info,uart_cb ut_
         UartConfig.ui32FifoLevels = (AM_HAL_UART_TX_FIFO_1_2 | AM_HAL_UART_RX_FIFO_1_2);
         
         // Buffers
-        UartConfig.pui8TxBuffer = pui8TxBuffer;
-        UartConfig.ui32TxBufferSize = sizeof(pui8TxBuffer);
-        UartConfig.pui8RxBuffer = pui8RxBuffer;
-        UartConfig.ui32RxBufferSize = sizeof(pui8RxBuffer);
+        UartConfig.pui8TxBuffer = u8TxBuffer;
+        UartConfig.ui32TxBufferSize = sizeof(u8TxBuffer);
+        UartConfig.pui8RxBuffer = u8RxBuffer;
+        UartConfig.ui32RxBufferSize = sizeof(u8RxBuffer);
 
-        handler = pUart1_Handler;
-#if AM_CMSIS_REGS
-        irq = UART1_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART1;
-#endif
         //以下的code需要根据项目原理图配置
-        u32Modul = UART_ID1;
+        u8uart_id = UART_ID1;
         u32RxPin = UART1_RX;
         u32TxPin = UART1_TX;
         u32TxConfig=AM_HAL_PIN_14_UART1TX;
@@ -179,52 +163,45 @@ ret_type SMDrv_UART_Open(uart_module modul,uart_openinfo *ptype_info,uart_cb ut_
         // Buffers 通讯数据量小，不需用大buffer
         UartConfig.pui8TxBuffer = NULL;
         UartConfig.ui32TxBufferSize = 0;
-        UartConfig.pui8RxBuffer = NULL;
-        UartConfig.ui32RxBufferSize = 0;
+        UartConfig.pui8RxBuffer = u8fifo;
+        UartConfig.ui32RxBufferSize = sizeof(u8fifo);
     
-        handler = pUart1_Handler;
-#if AM_CMSIS_REGS
-        irq = UART0_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART0;
-#endif
         //以下的code需要根据项目原理图配置
-        u32Modul = UART_ID0;
+        u8uart_id = UART_ID0;
         u32RxPin = UART0_RX;
         u32TxPin = UART0_TX;
-        //u32TxConfig=AM_HAL_PIN_14_UART1TX;
-        //u32RxConfig=AM_HAL_PIN_15_UART1RX;
+        u32TxConfig=AM_HAL_PIN_22_UART0TX;
+        u32RxConfig=AM_HAL_PIN_23_UART0RX;
     }
     else
     {
         return Ret_InvalidParam;
     }
 
-    //step 2:初始化，开启和配置uart
-    if(am_hal_uart_initialize(u32Modul, &handler) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - init uart failed.\n"));
-    if(am_hal_uart_power_control(handler, AM_HAL_SYSCTRL_WAKE, false) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - power on uart failed.\n"));
-    if(am_hal_uart_configure(handler, &UartConfig) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - config uart failed.\n"));
-
-    //step 3:将对应的IO口配置为UART功能，并设置UART参数
-    g_UartConfig.uFuncSel = u32RxConfig,
+    //step 2:将对应的IO口配置为UART功能，并设置UART参数
+    g_UartConfig.uFuncSel = u32RxConfig;
     am_hal_gpio_pinconfig(u32RxPin, g_UartConfig);
-    g_UartConfig.uFuncSel = u32TxConfig,
+    g_UartConfig.uFuncSel = u32TxConfig;
+    g_UartConfig.eDriveStrength  = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     am_hal_gpio_pinconfig(u32TxPin, g_UartConfig);
 
+    //step 3:初始化，开启和配置uart
+    if(am_hal_uart_initialize(u8uart_id, &pUart_Handler[u8uart_id]) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - init uart failed.\n"));
+    
+    if(am_hal_uart_power_control(pUart_Handler[u8uart_id], AM_HAL_SYSCTRL_WAKE, false) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - power on uart failed.\n"));
+    if(am_hal_uart_configure(pUart_Handler[u8uart_id], &UartConfig) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - config uart failed.\n"));
+
     // Enable interrupts.
-#if AM_CMSIS_REGS
-    NVIC_EnableIRQ(irq);
-#else
-    am_hal_interrupt_enable(irq);
-#endif
+    irq_handle = (u8uart_id == UART_ID1) ? INTERRUPT_UART1 : INTERRUPT_UART0;
+    SMDrv_SYS_EnableIsr(irq_handle);
 
     //step 4:根据中断参数使能uart中断
     if(ut_callback != NULL)
     {
-        pUart_CallBack[u32Modul] = ut_callback;
+        pUart_CallBack[u8uart_id] = ut_callback;
     }
 
     return Ret_OK;
@@ -239,45 +216,23 @@ ret_type SMDrv_UART_Open(uart_module modul,uart_openinfo *ptype_info,uart_cb ut_
 ret_type SMDrv_UART_Close(uart_module modul)
 {
     uint32 u32Modul = UART_MAX,u32RxPin = IO_UNKNOW,u32TxPin = IO_UNKNOW;
-    //ui32Interrupt的值为: AM_HAL_INTERRUPT_UART1,AM_HAL_INTERRUPT_UART0
-    void *handler = NULL;
-#if AM_CMSIS_REGS
-    IRQn_Type irq;
-#else
-    uint32 irq;
-#endif
+    am_hal_gpio_pincfg_t g_AM_HAL_GPIO_DISABLE = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    interrupt_handle irq_handle;
+    uint8 u8uart_id;
 
-    am_hal_gpio_pincfg_t g_AM_HAL_GPIO_DISABLE =
-    {
-        .uFuncSel       = 3,
-        .eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA,
-        .eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE
-    };
 
     //step 1:配置模块UART参数
     if(modul == GPS_UART_MODULE)
     {
-        handler = pUart1_Handler;
-#if AM_CMSIS_REGS
-        irq = UART1_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART1;
-#endif
         //以下的code需要根据项目原理图配置
-        u32Modul = UART_ID1;
+        u8uart_id = UART_ID1;
         u32RxPin = UART1_RX;
         u32TxPin = UART1_TX;
     }
     else if(modul == BASE_UART_MODULE)
     {
-        handler = pUart0_Handler;
-#if AM_CMSIS_REGS
-        irq = UART0_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART0;
-#endif
         //以下的code需要根据项目原理图配置
-        u32Modul = UART_ID0;
+        u8uart_id = UART_ID0;
         u32RxPin = UART0_RX;
         u32TxPin = UART0_TX;
     }
@@ -287,18 +242,19 @@ ret_type SMDrv_UART_Close(uart_module modul)
         return Ret_InvalidParam;
 
     //step 2:disable UART时钟，和UART
-    am_hal_uart_power_control(handler, AM_HAL_SYSCTRL_DEEPSLEEP, false);
-    am_hal_uart_deinitialize(handler);
+    am_hal_uart_power_control(pUart_Handler[u8uart_id], AM_HAL_SYSCTRL_DEEPSLEEP, false);
+    am_hal_uart_deinitialize(pUart_Handler[u8uart_id]);
     //step 3:重新配置uart脚功能
+    g_AM_HAL_GPIO_DISABLE.uFuncSel       = 3;
+    g_AM_HAL_GPIO_DISABLE.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
+    g_AM_HAL_GPIO_DISABLE.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
     am_hal_gpio_pinconfig(u32RxPin, g_AM_HAL_GPIO_DISABLE);
     am_hal_gpio_pinconfig(u32TxPin, g_AM_HAL_GPIO_DISABLE);
 
     //step 4:清除中断回调函数，open的时候重新设置
-#if AM_CMSIS_REGS
-    NVIC_DisableIRQ(irq);
-#else
-    am_hal_interrupt_disable(irq);
-#endif
+    irq_handle = (u8uart_id == UART_ID1) ? INTERRUPT_UART1 : INTERRUPT_UART0;
+    SMDrv_SYS_DisableIsr(irq_handle);
+
     pUart_CallBack[u32Modul] = NULL;
     return Ret_OK;
 }
@@ -312,39 +268,19 @@ ret_type SMDrv_UART_Close(uart_module modul)
 //**********************************************************************
 ret_type SMDrv_UART_SetIsrPrio(uart_module modul,uint32 prio)
 {
-    //ui32Interrupt的值为: AM_HAL_INTERRUPT_UART1,AM_HAL_INTERRUPT_UART0
-#if AM_CMSIS_REGS
-    IRQn_Type irq;
-#else
-    uint32 irq;
-#endif
+    interrupt_handle irq_handle;
+
     if(modul == GPS_UART_MODULE)
-    {
-#if AM_CMSIS_REGS
-        irq = UART1_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART1;
-#endif
-    }
+        irq_handle = INTERRUPT_UART1;
     else if(modul == BASE_UART_MODULE)
-    {
-#if AM_CMSIS_REGS
-        irq = UART0_IRQn;
-#else
-        irq = AM_HAL_INTERRUPT_UART0;
-#endif
-    }
+        irq_handle = INTERRUPT_UART0;
     else
         return Ret_InvalidParam;
 
-#if AM_CMSIS_REGS
-    NVIC_SetPriority(irq,prio);
-    NVIC_EnableIRQ(irq);
-#else
-    //step:设置并使能uart中断
-    am_hal_interrupt_priority_set(irq, AM_HAL_INTERRUPT_PRIORITY(prio));
-    am_hal_interrupt_enable(irq);
-#endif
+    //step:设置中断优先级并使能uart中断
+    SMDrv_SYS_SetIsrPrio(irq_handle,prio);
+    SMDrv_SYS_EnableIsr(irq_handle);
+
     return Ret_OK;
 }
 
@@ -358,22 +294,33 @@ ret_type SMDrv_UART_SetIsrPrio(uart_module modul,uint32 prio)
 //**********************************************************************
 ret_type SMDrv_UART_EnableIrq(uart_module modul,uint32 irq_type,uint8 benable)
 {
-    void *handler = NULL;
+    uint8 u8uart_id;
+    uint32_t ui32IntMask = 0x00;
 
+    if(UART_EVENT_NONE == irq_type)
+        return Ret_InvalidParam;
+    
     if(modul == GPS_UART_MODULE)
-        handler = pUart1_Handler;
+        u8uart_id = UART_ID1;
     else if(modul == BASE_UART_MODULE)
-        handler = pUart0_Handler;
+        u8uart_id = UART_ID0;
     else
         return Ret_InvalidParam;
 
+    //发送中断
+    ui32IntMask |= (irq_type & UART_EVENT_TX) ? AM_HAL_UART_INT_TX : 0x00;
+    //接收中断
+    ui32IntMask |= (irq_type & UART_EVENT_RX) ? AM_HAL_UART_INT_RX : 0x00;
+    //接收超时中断
+    ui32IntMask |= (irq_type & UART_EVENT_RX_TIMEOUT)? AM_HAL_UART_INT_RX_TMOUT : 0x00;
+
     if(irq_type != UART_EVENT_NONE)
     {
-        am_hal_uart_interrupt_disable(handler, irq_type);
+        am_hal_uart_interrupt_clear(pUart_Handler[u8uart_id], ui32IntMask);
         if(benable == 1)
-            am_hal_uart_interrupt_enable(handler, irq_type);
+            am_hal_uart_interrupt_enable(pUart_Handler[u8uart_id], ui32IntMask);
         else
-            am_hal_uart_interrupt_disable(handler, irq_type);
+            am_hal_uart_interrupt_disable(pUart_Handler[u8uart_id], ui32IntMask);
     }
     return Ret_OK;
 }
@@ -390,12 +337,13 @@ ret_type SMDrv_UART_EnableIrq(uart_module modul,uint32 irq_type,uint8 benable)
 ret_type SMDrv_UART_WriteBytes(uart_module modul,uint8 *pData,uint16 len,uint16 *pu16LenWritten)
 {
     am_hal_uart_transfer_t sUartWrite;
-    void *handler = NULL;
+    uint32 ret;
+    uint8 u8uart_id;
     
     if(modul == GPS_UART_MODULE)
-        handler = pUart1_Handler;
+        u8uart_id = UART_ID1;
     else if(modul == BASE_UART_MODULE)
-        handler = pUart0_Handler;
+        u8uart_id = UART_ID0;
     else
         return Ret_InvalidParam;
 
@@ -405,8 +353,11 @@ ret_type SMDrv_UART_WriteBytes(uart_module modul,uint8 *pData,uint16 len,uint16 
     sUartWrite.ui32TimeoutMs = 0;
     sUartWrite.pui32BytesTransferred = (uint32_t *)pu16LenWritten;
 
-    if(am_hal_uart_transfer(handler, &sUartWrite) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - write uart failed.\n"));
+    ret = am_hal_uart_transfer(pUart_Handler[u8uart_id], &sUartWrite);
+    if(ret != AM_HAL_STATUS_SUCCESS)
+    {
+        //Err_Info((0,"Error - write uart failed:%d\n",ret));
+    }
 
     return Ret_OK;
 }
@@ -423,12 +374,13 @@ ret_type SMDrv_UART_WriteBytes(uart_module modul,uint8 *pData,uint16 len,uint16 
 ret_type SMDrv_UART_ReadBytes(uart_module modul,uint8 *pBuffer,uint16 len,uint16 *pu16ReadLen)
 {
     am_hal_uart_transfer_t sUartRead;
-    void *handler = NULL;
+    uint8 u8uart_id;
+    uint32 ret;
     
     if(modul == GPS_UART_MODULE)
-        handler = pUart1_Handler;
+        u8uart_id = UART_ID1;
     else if(modul == BASE_UART_MODULE)
-        handler = pUart0_Handler;
+        u8uart_id = UART_ID0;
     else
         return Ret_InvalidParam;
 
@@ -438,11 +390,53 @@ ret_type SMDrv_UART_ReadBytes(uart_module modul,uint8 *pBuffer,uint16 len,uint16
     sUartRead.ui32TimeoutMs = 0;
     sUartRead.pui32BytesTransferred = (uint32_t *)pu16ReadLen;
 
-    if(am_hal_uart_transfer(handler, &sUartRead) != AM_HAL_STATUS_SUCCESS)
-        Err_Info((0,"Error - read uart failed.\n"));
+    ret = am_hal_uart_transfer(pUart_Handler[u8uart_id], &sUartRead);
+    if(ret != AM_HAL_STATUS_SUCCESS)
+    {
+        //Err_Info((0,"Error - read uart failed:%d\n",ret));
+    }
 
     return Ret_OK;
 }
+
+//**********************************************************************
+// 函数功能: 获取module使用UART发送缓冲区大小
+// 输入参数：	
+//    modul: driver module ID
+// 返回参数：发送缓冲区大小
+//**********************************************************************
+uint32 SMDrv_UART_GetTxBuffSize(uart_module modul)
+{
+    uint32 u32BuffSize;
+    if(modul == GPS_UART_MODULE)
+        u32BuffSize = UART1_TXBUFFER_MAX;
+    else if(modul == BASE_UART_MODULE)
+        u32BuffSize = UART_FIFO_SIZE;
+    else
+        u32BuffSize = 0;
+
+    return u32BuffSize;
+}
+
+//**********************************************************************
+// 函数功能: 获取module使用UART接收缓冲区大小
+// 输入参数：	
+//    modul: driver module ID
+// 返回参数：接收缓冲区大小
+//**********************************************************************
+uint32 SMDrv_UART_GetRxBuffSize(uart_module modul)
+{
+    uint32 u32BuffSize;
+    if(modul == GPS_UART_MODULE)
+        u32BuffSize = UART1_RXBUFFER_MAX;
+    else if(modul == BASE_UART_MODULE)
+        u32BuffSize = UART_FIFO_SIZE;
+    else
+        u32BuffSize = 0;
+
+    return u32BuffSize;
+}
+
 #else
 
 /*

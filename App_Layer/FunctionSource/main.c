@@ -10,6 +10,7 @@ static void Bsp_Init(void)
 	
 	Drv_MTimer_Init();		// 放在初始化前面
 
+	Mid_Uart_Init();
 	Mid_Key_Init();
 	Mid_Motor_Init();
 //	Mid_Magnetism_Init();
@@ -52,9 +53,7 @@ static void Bsp_Init(void)
 }
 
 static void Task_Init(void)
-{
-//	UartTask_Create();
-	
+{	
 	// 中间层任务 
 	Mid_Schd_TaskCreate();
 //	Mid_GPS_TaskCreate();

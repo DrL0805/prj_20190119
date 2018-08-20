@@ -3,9 +3,14 @@
 
 #include "platform_common.h"
 
-//定义使用ADC的模块的slot，如bat用slot 0，则定义BAT_ADC_SLOT为0
-//ADC for BAT
-#define BAT_ADC_SLOT  0
+//定义使用adc的模块类型
+//说明:软件中用到的module放在MAX_ADC_MODULE前，没用的放在后面
+typedef enum
+{
+    BAT_ADC_MODULE,       //BAT Adc
+    BODY_TEMP_ADC_MODULE, //体温，热敏
+    MAX_ADC_MODULE,
+}adc_module;
 
 typedef void (*adc_cb)(uint32 u32adcValue);
 
@@ -16,21 +21,27 @@ typedef void (*adc_cb)(uint32 u32adcValue);
 //**********************************************************************
 extern void SMDrv_ADC_Init(void);
 
+//**********************************************************************
+// 函数功能: 解除ADC
+// 输入参数：
+// 返回参数：
+//**********************************************************************
+extern void SMDrv_ADC_DeInit(void);
+
 //*****************************************************************************
 //函数功能：打开一个ADC通道
-// 输入参数：adc_slot：   adc 通道号
+// 输入参数：module：module id,同时也是slot ID,因此值需小于8，最多支持8个slot
 // 			adc_callback: callback函调函数
 // 返回：	无
 //*****************************************************************************
-extern ret_type SMDrv_ADC_Open(uint32 adc_slot,adc_cb adc_callback);
+extern ret_type SMDrv_ADC_Open(adc_module module,adc_cb adc_callback);
 
 //*****************************************************************************
 //函数功能：关闭一个打开的ADC通道
-// 输入参数：adc_slot：   adc 通道号
-// 			adc_callback: callback函调函数
+// 输入参数：module：
 // 返回：	无
 //*****************************************************************************
-extern ret_type SMDrv_ADC_Close(void);
+extern ret_type SMDrv_ADC_Close(adc_module module);
 
 //**********************************************************************
 // 函数功能:  设置ADC中断优先级,并启动ADC中断

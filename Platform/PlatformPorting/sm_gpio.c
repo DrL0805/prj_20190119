@@ -7,7 +7,7 @@
 **
 **********************************************************************/
 #define BAT_MODULE
-//#define KEY_MODULE
+#define KEY_MODULE
 #define HEART_RATE
 #ifdef AM_PART_APOLLO3
 #define FONT_MODULE
@@ -45,8 +45,11 @@ void am_gpio_isr(void)
 //**********************************************************************
 static uint32 Smdrv_IsSpiCs(uint32 u32PinNum)
 {
+//现有SDK CS脚还需要有软件控制  
+#if 0
     if((u32PinNum == FONT_CS_PIN) || (u32PinNum == FLASH_CS_PIN))
         return TRUE;
+#endif
     return FALSE;
 }
 
@@ -72,7 +75,8 @@ void SMDrv_GPIO_Init(void)
 //**********************************************************************
 ret_type SMDrv_GPIO_Open(uint32 u32PinNum,uint32 *config_opt,gpio_cb g_callback)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 ret;
 
     if(u32PinNum >= IO_UNKNOW)
         return Ret_InvalidParam;
@@ -91,10 +95,10 @@ ret_type SMDrv_GPIO_Open(uint32 u32PinNum,uint32 *config_opt,gpio_cb g_callback)
     bfGpioCfg.uFuncSel = 3;  //IO口功能选择，=3是GPIO
     if((u32PinNum == KEY_S0_PIN) || (u32PinNum == KEY_S1_PIN) || (u32PinNum == KEY_S2_PIN))
     {
-        bfGpioCfg.eIntDir    = AM_HAL_GPIO_PIN_INTDIR_HI2LO;   //下降沿触发	// AM_HAL_GPIO_PIN_INTDIR_LO2HI;//
+        bfGpioCfg.eIntDir    = AM_HAL_GPIO_PIN_INTDIR_LO2HI;//AM_HAL_GPIO_PIN_INTDIR_HI2LO;   //下降沿触发
         bfGpioCfg.eGPOutcfg  = AM_HAL_GPIO_PIN_OUTCFG_DISABLE; //输入
         bfGpioCfg.eGPInput   = AM_HAL_GPIO_PIN_INPUT_ENABLE;
-		bfGpioCfg.ePullup    = AM_HAL_GPIO_PIN_PULLUP_WEAK;//AM_HAL_GPIO_PIN_PULLUP_24K;
+		bfGpioCfg.ePullup    = AM_HAL_GPIO_PIN_PULLUP_WEAK;
     }
     else if(u32PinNum == HR_INT1_PIN)
     {
@@ -122,7 +126,11 @@ ret_type SMDrv_GPIO_Open(uint32 u32PinNum,uint32 *config_opt,gpio_cb g_callback)
     {
         //如果参数传入设置GPIO属性的参数，就使用传入的值，否则使用默认配置的值
     }    
-    am_hal_gpio_pinconfig(u32PinNum, bfGpioCfg);
+    if((ret = am_hal_gpio_pinconfig(u32PinNum, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - open GPIO config pin %d failed:%d\n",u32PinNum,ret));
+        return Ret_Fail;
+    }
 
     //step 4:中断模式，enable中断
     if(g_callback != NULL)
@@ -195,7 +203,8 @@ void SMDrv_GPIO_SetIrqPrio(uint32 prio)
 //**********************************************************************
 ret_type SMDrv_GPIO_Close(uint32 u32PinNum)
 {
-    am_hal_gpio_pincfg_t bfGpioCfg;
+    am_hal_gpio_pincfg_t bfGpioCfg = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint32 ret;
 
     if(u32PinNum >= IO_UNKNOW)
         return Ret_InvalidParam;
@@ -206,7 +215,12 @@ ret_type SMDrv_GPIO_Close(uint32 u32PinNum)
     bfGpioCfg.uFuncSel       = 3,
     bfGpioCfg.eDriveStrength = AM_HAL_GPIO_PIN_DRIVESTRENGTH_2MA;
     bfGpioCfg.eGPOutcfg      = AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
-    am_hal_gpio_pinconfig(u32PinNum, bfGpioCfg);
+    if((ret = am_hal_gpio_pinconfig(u32PinNum, bfGpioCfg)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - GPIO close pin config failed:%d\n",ret));
+        return Ret_Fail;
+    }
+
     return Ret_OK;
 }
 
@@ -217,13 +231,18 @@ ret_type SMDrv_GPIO_Close(uint32 u32PinNum)
 //**********************************************************************
 ret_type SMDrv_GPIO_BitSet(uint32 u32PinNum)
 {
+    uint32 ret;
     if(u32PinNum >= IO_UNKNOW)
         return Ret_InvalidParam;
 
     if(Smdrv_IsSpiCs(u32PinNum))
         return Ret_OK;
 
-    am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_SET);
+    if((ret = am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_SET)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - GPIO set failed:%d\n",ret));
+        return Ret_Fail;
+    }
     return Ret_OK;
 }
 
@@ -234,13 +253,18 @@ ret_type SMDrv_GPIO_BitSet(uint32 u32PinNum)
 //**********************************************************************
 ret_type SMDrv_GPIO_BitClear(uint32 u32PinNum)
 {
+    uint32 ret;
     if(u32PinNum >= IO_UNKNOW)
         return Ret_InvalidParam;
 
     if(Smdrv_IsSpiCs(u32PinNum))
         return Ret_OK;
 
-    am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_CLEAR);
+    if((ret = am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_CLEAR)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - GPIO clear failed:%d\n",ret));
+        return Ret_Fail;
+    }
     return Ret_OK;
 }
 
@@ -251,13 +275,18 @@ ret_type SMDrv_GPIO_BitClear(uint32 u32PinNum)
 //**********************************************************************
 ret_type SMDrv_GPIO_BitToggle(uint32 u32PinNum)
 {
+    uint32 ret;
     if(u32PinNum >= IO_UNKNOW)
         return Ret_InvalidParam;
 
     if(Smdrv_IsSpiCs(u32PinNum))
         return Ret_OK;
 
-    am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_TOGGLE);
+    if((ret = am_hal_gpio_state_write(u32PinNum, AM_HAL_GPIO_OUTPUT_TOGGLE)) != AM_HAL_STATUS_SUCCESS)
+    {
+        Err_Info((0,"Error - GPIO toggle failed:%d\n",ret));
+        return Ret_Fail;
+    }
     return Ret_OK;
 }
 
@@ -269,6 +298,7 @@ ret_type SMDrv_GPIO_BitToggle(uint32 u32PinNum)
 uint32 SMDrv_GPIO_InBitRead(uint32 u32PinNum)
 {
     uint32_t u32State;
+    uint32 ret;
 
     if(u32PinNum >= IO_UNKNOW)
         return 0xFFFFFFFF;
@@ -276,7 +306,8 @@ uint32 SMDrv_GPIO_InBitRead(uint32 u32PinNum)
     if(Smdrv_IsSpiCs(u32PinNum))
         return 0xFFFFFFFF;
 
-    am_hal_gpio_state_read(u32PinNum,AM_HAL_GPIO_INPUT_READ, &u32State);
+    if((ret = am_hal_gpio_state_read(u32PinNum,AM_HAL_GPIO_INPUT_READ, &u32State)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - GPIO read in failed:%d\n",ret));
     return u32State;
 }
 
@@ -287,7 +318,8 @@ uint32 SMDrv_GPIO_InBitRead(uint32 u32PinNum)
 //**********************************************************************
 uint32 SMDrv_GPIO_OutBitRead(uint32 u32PinNum)
 {
-    uint32_t u32State;
+    uint32_t u32State;    
+    uint32 ret;
 
     if(u32PinNum >= IO_UNKNOW)
         return 0xFFFFFFFF;
@@ -295,7 +327,8 @@ uint32 SMDrv_GPIO_OutBitRead(uint32 u32PinNum)
     if(Smdrv_IsSpiCs(u32PinNum))
         return 0xFFFFFFFF;
 
-    am_hal_gpio_state_read(u32PinNum,AM_HAL_GPIO_OUTPUT_READ, &u32State);
+    if((ret = am_hal_gpio_state_read(u32PinNum,AM_HAL_GPIO_OUTPUT_READ, &u32State)) != AM_HAL_STATUS_SUCCESS)
+        Err_Info((0,"Error - GPIO read out failed:%d\n",ret));
     return u32State;
 }
 

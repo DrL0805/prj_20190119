@@ -12,20 +12,6 @@ typedef enum
     MAX_SPI_MODULE,    
 }spi_module;
 
-#if 0
-typedef enum
-{
-    SPI_OPEN_INIT,  //以初始化spi方式open，在系统开启的时候
-    SPI_OPEN_AWAKE, //以唤醒spi方式open，主要在spi进入sleep模式后，再次唤醒
-}spi_open_cmd;
-
-typedef enum
-{
-    SPI_CLOSE_DEINIT,  //以关闭spi方式close，与SPI_OPEN_INIT 匹配
-    SPI_CLOSE_SLEEP,   //以休眠方式close，与SPI_OPEN_AWAKE匹配
-}spi_open_cmd;
-#endif
-
 //**********************************************************************
 // 函数功能: 初始化SPI
 // 输入参数：	
@@ -72,23 +58,6 @@ extern ret_type SMDrv_SPI_Sleep(spi_module modul);
 // 返回参数：spi Module ID
 //**********************************************************************
 extern uint32 SMDrv_SPI_GetModuleId(spi_module modul);
-
-//**********************************************************************
-// 函数功能: 获取SPI资源，如果多个driver模块使用同一个SPI时需要加锁保护
-// 输入参数：	
-//    modul: driver module ID
-//    u32timeout:等待超时时间
-// 返回参数：
-//**********************************************************************
-extern ret_type SMDrv_SPI_LockMutex(spi_module modul,uint32 u32timeout);
-
-//**********************************************************************
-// 函数功能: 释放SPI资源
-// 输入参数：	
-//    modul: driver module ID
-// 返回参数：
-//**********************************************************************
-extern ret_type SMDrv_SPI_UnLockMutex(spi_module modul);
 
 //**********************************************************************
 // 函数功能: 向driver module ID对应的SPI写1 个字节
