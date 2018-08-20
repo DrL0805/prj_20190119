@@ -31,7 +31,7 @@ static QueueHandle_t 	Win_QueueHandle;				/**< Queue handler for flash task */
 static 	APP_WIN_T	AppWin[] =
 		{
 			// 创建顺序无须与eAppWinHandle中的参数对应，函数调用前会先搜索索引
-			{ eIdleWinHandle, App_IdleWin_Init, App_IdleWin_Cb},
+			{ eLockWinHandle, App_LockWin_Init, App_LockWin_Cb},
 			{ eStoreWinHandle, App_StoreWin_Init, App_StoreWin_Cb},
 			{ ePwronWinHandle, App_PwronWin_Init, App_PwronWin_Cb},
 			{ eTimeWinHandle, App_TimeWin_Init, App_TimeWin_Cb},
@@ -49,9 +49,24 @@ App_Win_Param_T	AppWinParam =
 	{
 		.CurrWinHanle = eInvalidWinHandle,
 		.CurrSubWinHandle = eAppSubWinHandleNone,
+		.IdleWinCnt = 0,
 	};	
 
 
+void App_Window_LockWinCnt(void)
+{
+	AppWinParam.IdleWinCnt++;
+	
+	// 锁屏到时，发送锁屏事件
+	if((AppWinParam.IdleWinCnt > APP_WIN_LOCK_TIMEOUT) && (eLockWinHandle != AppWinParam.CurrWinHanle))
+	{
+		App_Win_Msg_T WinMsg;
+		WinMsg.MenuTag = eWinMenuLock;
+		WinMsg.val = 0;
+		App_Win_TaskEventSet(&WinMsg);		
+	}
+}
+	
 //**********************************************************************
 // 函数功能：  窗口初始化
 // 输入参数：  需要创建的窗口句柄	

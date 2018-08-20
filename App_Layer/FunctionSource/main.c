@@ -35,14 +35,16 @@ static void Bsp_Init(void)
 
 //	Mid_Font_Init();
 	
-	Drv_IT7259_Init();
+//	Drv_IT7259_Init();
 	
 //	Mid_NandFlash_Init();
 
 	// 场景数据初始化
 	Mid_SleepScene_Init();
 	Mid_SportScene_Init();
-
+	
+	App_Protocal_Init();
+	Mid_Ble_Init();
 	
 	Mod_Sys_Init();
 }
@@ -60,8 +62,8 @@ static void Task_Init(void)
 	// 模块化任务
 	Mod_Pwr_TaskCreate();
 	Mod_Algo_TaskCreate();
-	Mod_PDU_TaskCreate();
-	Mod_Flash_TaskCreate();
+//	Mod_PDU_TaskCreate();
+//	Mod_Flash_TaskCreate();
 	Mod_Time_TaskCreate();
 	
 	// 应用层任务

@@ -41,9 +41,10 @@
 typedef enum 
 {
 	eWinMenukey,
-	eWinMenuPwrOn,		// 开机完成，仅用于开机窗口
-	eWinMenuSlide,		// Val 0~3：上、下、左、右
-	eWinMenuClick,		// 点击
+	eWinMenuPwrOn,			// 开机完成，仅用于开机窗口
+	eWinMenuSlide,			// Val 0~3：上、下、左、右
+	eWinMenuClick,			// 点击
+	eWinMenuLock,			// 锁屏
 	eWinMenuMax,
 	
 //	TAG_TIME 				= 0x0000,  //时间相关:半秒、秒、
@@ -84,7 +85,7 @@ typedef enum
 // 主窗口句柄类型
 typedef enum 
 {
-	eIdleWinHandle,
+	eLockWinHandle,
 	eStoreWinHandle,		// 仓储	
 	ePwronWinHandle,
 	eTimeWinHandle,

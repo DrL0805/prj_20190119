@@ -53,6 +53,19 @@ typedef struct
 	}Param;
 }App_Lcd_TaskMsg_T;
 
+typedef enum
+{
+	eLcdBacklightOff,
+	eLcdBacklightOn,
+	eLcdBacklightWait,
+}eLcdBacklightType;
+
+typedef struct 
+{
+	eLcdBacklightType	BacklightType;
+	uint32_t 			BacklightCnt;
+}App_Lcd_Param_t;
+
 void App_Lcd_TaskEventSet(App_Lcd_TaskMsg_T* Msg, uint8_t FromISR);
 void App_Lcd_TaskCreate(void);
 #endif

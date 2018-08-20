@@ -4,8 +4,8 @@
 #include "app_win_common.h"
 #include "app_win_process.h"
 
-eAppWinHandle App_IdleWin_Init(void);
-eAppWinHandle App_IdleWin_Cb(eAppWinHandle WinHandle, App_Win_Msg_T message);
+eAppWinHandle App_LockWin_Init(void);
+eAppWinHandle App_LockWin_Cb(eAppWinHandle WinHandle, App_Win_Msg_T message);
 
 #endif
 

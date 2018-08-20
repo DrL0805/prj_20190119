@@ -8,6 +8,8 @@
 #include "mid_stopwatch.h"
 #include "mid_countdown.h"
 
+#include "main.h"
+
 #define MOD_TIME_RTT_DEBUG	3
 #if (1 == MOD_TIME_RTT_DEBUG)	// ´íÎóµÈ¼¶
 #define MOD_TIME_RTT_LOG(...)

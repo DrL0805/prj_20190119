@@ -8,9 +8,28 @@ static QueueHandle_t 	sLcd_QueueHandle;				// 队列句柄
 #define 	LCD_TASK_QUEUE_WAIT_TICK		100			// 队列阻塞时间
 #define		LCD_TASK_QUEUE_SIZE				sizeof(App_Lcd_TaskMsg_T)
 
-// ***********************************************************************
-//	以下是任务调度代码
-// ***********************************************************************
+App_Lcd_Param_t	App_Lcd;
+
+//**********************************************************************
+// 函数功能: 背光处理函数
+// 输入参数：
+// 返回参数：
+// 调用：每秒调用一次
+void App_Lcd_BacklightProess(void)
+{
+	App_Lcd.BacklightCnt++;
+}
+
+void App_Lcd_BacklightSet(uint32_t Cnt)
+{
+	App_Lcd.BacklightCnt = Cnt;
+}
+
+uint32_t App_Lcd_BacklightGet(void)
+{
+	return App_Lcd.BacklightCnt;
+}
+
 static void App_Lcd_TaskProcess(void *pvParameters)
 {
 	App_Lcd_TaskMsg_T	Msg;

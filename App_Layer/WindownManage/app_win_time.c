@@ -3,6 +3,8 @@
 static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
+static eAppWinHandle App_Win_LockMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
+
 
 #define AppTimeWinMenuNum (sizeof(AppTimeWinMenu)/sizeof(AppTimeWinMenu[0]))	
 App_Win_Menu_T	AppTimeWinMenu[] = 
@@ -10,6 +12,7 @@ App_Win_Menu_T	AppTimeWinMenu[] =
 	{eWinMenukey, App_Win_KeyMenuHandler},
 	{eWinMenuSlide, App_Win_SlideMenuHandler},
 	{eWinMenuClick, App_Win_ClickMenuHandler},
+	{eWinMenuLock, App_Win_LockMenuHandler},
 };
 
 //**********************************************************************
@@ -79,6 +82,28 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 	APP_WIN_RTT_LOG(0,"App_Win_ClickMenuHandler \r\n");
 	
 	eAppWinHandle TmpWinHandle = WinHandle;
+	
+	return TmpWinHandle;	
+}
+
+//**********************************************************************
+// 函数功能：  窗口菜单处理函数
+// 输入参数：  WinHandle	当前窗口句柄
+// 				message		传入参数
+// 返回参数：  成功创建的窗口句柄
+static eAppWinHandle App_Win_LockMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
+{
+	APP_WIN_RTT_LOG(0,"App_Win_LockMenuHandler \r\n");
+	
+	eAppWinHandle TmpWinHandle = WinHandle;
+	
+	// 保存之前窗口句柄
+	AppWinParam.LastWinHanle = AppWinParam.CurrWinHanle;
+	AppWinParam.LastSubWinHandle = AppWinParam.CurrSubWinHandle;
+	
+	// 进入锁屏窗口
+	AppWinParam.IdleWinCnt = 0;
+	TmpWinHandle = eLockWinHandle;
 	
 	return TmpWinHandle;	
 }

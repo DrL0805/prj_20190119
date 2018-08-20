@@ -28,10 +28,12 @@
 #include "mod_flash.h"
 #include "mod_time.h"
 #include "mod_system.h"
+#include "ble_task.h"
 
 // app
 #include "app_lcd.h"
 #include "App_win_process.h"
+#include "app_protocal.h"
 
 #endif
 
