@@ -3,6 +3,7 @@
 
 #include "main.h"
 
+#include "drv_font.h"
 
 static void Bsp_Init(void)
 {
@@ -34,6 +35,7 @@ static void Bsp_Init(void)
 	Mid_StopWatch_Init();	// 秒表
 	Mid_Countdown_Init();	// 倒计时
 
+	Drv_Font_SelfTest();
 //	Mid_Font_Init();
 	
 //	Drv_IT7259_Init();

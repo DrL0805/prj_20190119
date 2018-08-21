@@ -286,7 +286,8 @@ void SMDrv_SPI_Init(void)
 ret_type SMDrv_SPI_Open(spi_module modul)
 {
     spip_info_s spi_info;
-    am_hal_iom_config_t SPI_Config;
+    am_hal_iom_config_t SPI_Config;
+
     uint32 ret;
 
     if(spi_modul2info(modul,&spi_info,&SPI_Config) == FALSE)

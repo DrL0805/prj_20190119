@@ -1958,11 +1958,17 @@ am_hal_iom_power_ctrl(void *pHandle,
         case AM_HAL_SYSCTRL_DEEPSLEEP:
             // Make sure IOM is not active currently
 #if AM_CMSIS_REGS
+
+            //fix :CS 由软件控制，而且在block 通讯模式下，都有等待操作完成的动作，此处先mark掉
+            #if 0
             if (((IOMn(pIOMState->ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk) ||
                 pIOMState->ui32NumPendTransactions)
             {
                 return AM_HAL_STATUS_IN_USE;
             }
+            #endif
+            //fix:2018.8.16
+            
             if (bRetainState)
             {
                 // Save IOM Registers
@@ -2201,7 +2207,11 @@ am_hal_iom_configure(void *pHandle, am_hal_iom_config_t *psConfig)
     // Enable and set the clock configuration.
     //
 #if AM_CMSIS_REGS
-    IOMn(ui32Module)->CLKCFG |= _VAL2FLD(IOM0_CLKCFG_IOCLKEN, 1);
+    //fix :设置时钟
+    //IOMn(ui32Module)->CLKCFG |= _VAL2FLD(IOM0_CLKCFG_IOCLKEN, 1);
+    ui32ClkCfg |= _VAL2FLD(IOM0_CLKCFG_IOCLKEN, 1);
+    IOMn(ui32Module)->CLKCFG = ui32ClkCfg;
+    //fix :2018.8.16
 #else // AM_CMSIS_REGS
     ui32ClkCfg |= AM_BFV(IOM, CLKCFG, IOCLKEN, 1);
 

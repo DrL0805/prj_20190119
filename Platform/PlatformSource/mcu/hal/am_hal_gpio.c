@@ -1039,7 +1039,6 @@ am_hal_gpio_interrupt_service(uint64_t ui64Status)
             // registered for this particular bit.
             //
             pfnHandler = gpio_ppfnHandlers[ui32Cnt + ui32FFS];
-//            SEGGER_RTT_printf(0,"ui32Cnt + ui32FFS=%d,pfnHandler=0x%x\n",ui32Cnt + ui32FFS,pfnHandler);
             if (pfnHandler)
             {
                 //

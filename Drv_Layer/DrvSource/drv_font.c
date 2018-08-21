@@ -12,10 +12,8 @@
 #include "sm_gpio.h"
 #include "sm_spi.h"
 
-//字库芯片字形大小支持
-#include "GT24L16A2Y.h"
+#include "HFMA2Ylib.h"
 #include "drv_font.h"
-
 
 //spi max buffer length
 #define SPI_BUFFER_MAX_SIZE 		(4095)
@@ -154,14 +152,13 @@ uint8 Drv_Font_Open(void)
     ret_type u8ret;
     uint32 u32font_conf = GPIO_PIN_OUTPUT; //default set pin as output
 
-
     //set flash cs pin as high, and open it
     if((u8ret = SMDrv_GPIO_BitSet(FONT_CS_PIN)) != Ret_OK)
         return u8ret;
     if((u8ret = SMDrv_GPIO_Open(FONT_CS_PIN,&u32font_conf,NULL)) != Ret_OK)
         return u8ret;
     
-    //open flash spi
+    //open spi
     if((u8ret = SMDrv_SPI_Open(FONT_SPI_MODULE)) != Ret_OK)
         return u8ret;
 
@@ -207,16 +204,14 @@ uint8 Drv_Font_ReadGB2313(uint16 GB, uint8 gb_size,uint8 *pdata)
 #if(FONT_CS_PIN != IO_UNKNOW)
     switch(gb_size)
     {
-    case GB_SIZE_12X12://GB_SIZE_16X16
-    GB18030_12_GetData((GB >> 8 & 0xff), (GB & 0xff), 0, 0,pdata);
-    break;
-
-    case GB_SIZE_16X16://GB_SIZE_16X16
-    hzbmp16(SEL_GB, GB, 0, 16,pdata);
-    break;
-
-    default:
-    break;
+		case GB_SIZE_16X16://GB_SIZE_16X16
+			hzbmp16(SEL_GB, GB, 0, 16,pdata);
+			break;
+		case GB_SIZE_24X24://GB_SIZE_24X24
+//			hzbmp24(SEL_GB, GB, 0, 24,pdata);
+			break;
+		default:
+			break;
     }
 #endif
     return Ret_OK;
@@ -230,7 +225,7 @@ uint8 Drv_Font_ReadGB2313(uint16 GB, uint8 gb_size,uint8 *pdata)
 //**********************************************************************
 uint16 Drv_Font_Unicode2GB(uint16 unicode)
 {
-	return U2GBK(unicode);
+//    return U2G(unicode);
 }
 
 //**********************************************************************
@@ -264,8 +259,7 @@ uint8 Drv_Font_ReadASCII(uint8 ascii, uint8 ascii_size, uint8 *pdata)
 uint8 Drv_Font_ReadUI(uint8 uisequence, uint8 *pdata)
 {
 #if(FONT_CS_PIN != IO_UNKNOW)
-
-	
+    zz_zf(uisequence,KCD_UI_32,pdata);	
 #endif
     return Ret_OK;
 }
@@ -305,10 +299,43 @@ uint8 Drv_Font_SendCmd(font_cmd ft_cmd)
 //**********************************************************************
 uint8 Drv_Font_SelfTest(void)
 {
+    uint8 i;
+    uint8 DZ_Data[16];
+    uint8  A_8X16_compare1[16] = 
+    {
+    	0x00,0x80,0x70,0x08,0x70,0x80,0x00,0x00,0x3c,0x03,0x02,0x02,0x02,0x03,0x3c,0x00
+    };
+	
+	Drv_Font_Open();
+	Drv_Font_SendCmd(FONT_SLEEP_CMD);
+	Drv_Font_Close();
+
+	Drv_Font_Open();
+	SEGGER_RTT_printf(0,"0\n");
+	Drv_Font_SendCmd(FONT_WAKEUP_CMD);
+	SEGGER_RTT_printf(0,"1\n");
+	Drv_Font_ReadASCII(0x41, ASCII_8X16,DZ_Data);
+	SEGGER_RTT_printf(0,"2\n");
+	for(i = 0; i < 16; i++)
+	{
+		if(DZ_Data[i] != A_8X16_compare1[i])
+			break;
+	}
+	if(i>=16)
+		SEGGER_RTT_printf(0,"OK: font\n");
+	else
+		SEGGER_RTT_printf(0,"Error: font read 'A'\n");
+	Drv_Font_SendCmd(FONT_SLEEP_CMD);
+	Drv_Font_Close();	
+	
+	#if 0
     uint8 result = Ret_OK;
 #if(FONT_CS_PIN != IO_UNKNOW)
     uint8 i;
     uint8 DZ_Data[16];
+
+	Drv_Font_Open();
+	Drv_Font_SendCmd(FONT_WAKEUP_CMD);
 
     Drv_Font_ReadASCII(0x41, ASCII_8X16,DZ_Data);
     for(i = 0; i < 16; i++)
@@ -316,7 +343,41 @@ uint8 Drv_Font_SelfTest(void)
         if(DZ_Data[i] != A_8X16_compare[i])
             result = Ret_Fail;
     }
+	
+	Drv_Font_SendCmd(FONT_SLEEP_CMD);	
+	Drv_Font_Close();		
 #endif
     return result;
+	#endif
 }
+
+//**********************************************************************
+// 函数功能:	字库芯片初始化，并控制其进入休眠模式
+// 输入参数：	无
+// 返回参数：	00H初始化成功，其他值初始化失败
+//**********************************************************************
+uint8 Drv_Font_Init(void)
+{		
+	#if 1
+    uint8 result = Ret_OK;
+#if(FONT_CS_PIN != IO_UNKNOW)
+	result= Drv_Font_Open();
+	if(Ret_OK != result) return result;
+	
+	result= Drv_Font_SendCmd(FONT_SLEEP_CMD);
+	if(Ret_OK != result) return result;
+	
+	result= Drv_Font_Close();
+	if(Ret_OK != result) return result;
+#endif
+    return result;
+	#endif
+}
+
+
+
+
+
+
+
 

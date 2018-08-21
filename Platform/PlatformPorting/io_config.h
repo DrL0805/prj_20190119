@@ -121,7 +121,7 @@
 #endif
 
 #ifdef FONT_MODULE
-#define FONT_CS_PIN     28    //字库片选 GT
+#define FONT_CS_PIN     13    //字库片选 GT
 #endif
 
 //定义ADC

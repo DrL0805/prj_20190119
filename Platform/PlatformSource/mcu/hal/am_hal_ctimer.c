@@ -1623,8 +1623,7 @@ am_hal_ctimer_input_config(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment,
 //! @return None.
 //
 //*****************************************************************************
-void
-am_hal_ctimer_compare_set(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment,
+void am_hal_ctimer_compare_set(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment,
                           uint32_t ui32CompareReg, uint32_t ui32Value)
 {
     volatile uint32_t *pui32CmprRegA, *pui32CmprRegB;
@@ -1637,15 +1636,23 @@ am_hal_ctimer_compare_set(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment,
 #if AM_CMSIS_REGS
     pui32CmprRegA = (uint32_t *)(&CTIMERn(0)->CMPRA0 +
                                 (ui32TimerNumber * TIMER_OFFSET));
+
+    //fix :timer seg B只能定时一次就停止
+    //原因: CTIMER_CMPR_OFFSET值是1，不是4，不能再除以4
+    pui32CmprRegB = pui32CmprRegA + CTIMER_CMPR_OFFSET;
+    //fix :2018.8.13
 #else // AM_CMSIS_REGS
     pui32CmprRegA = (uint32_t *)(AM_REG_CTIMERn(0) +
                                  AM_REG_CTIMER_CMPRA0_O +
                                  (ui32TimerNumber * TIMER_OFFSET));
+
+    //fix :timer seg B只能定时一次就停止
+    pui32CmprRegB = pui32CmprRegA + CTIMER_CMPR_OFFSET / 4;
+    //fix :2018.8.13
 #endif // AM_CMSIS_REGS
-    pui32CmprRegB = pui32CmprRegA + CTIMER_CMPR_OFFSET ;
 
     ui32ValB = ( ui32TimerSegment == AM_HAL_CTIMER_BOTH ) ?
-               ui32Value >> 16 : ui32Value & 0xFFFF;
+               (ui32Value >> 16) : (ui32Value & 0xFFFF);
 
     //
     // Write the compare register with the selected value.
@@ -1685,7 +1692,7 @@ am_hal_ctimer_compare_set(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment,
         // Set the upper 16b (but may not be used if TIMERA)
         //
         ui32CmprRegB = ( (ui32CmprRegB & CTIMER_CMPRA0_CMPR1A0_Msk) |
-                         _VAL2FLD(CTIMER_CMPRA0_CMPR0A0, ui32ValB) );
+                         _VAL2FLD(CTIMER_CMPRA0_CMPR0A0, ui32Value & 0xFFFF) );
     }
 
     if ( ui32TimerSegment == AM_HAL_CTIMER_TIMERB )
@@ -2663,7 +2670,7 @@ void BspTimerInitCom(int timer_number, int timer, int _timer_, unsigned int time
     am_hal_ctimer_config_single(timer_number, timer, time_config);
     am_hal_ctimer_compare_set(timer_number, timer, 0, delay_time);
     am_hal_ctimer_int_clear(_timer_);
-    am_hal_ctimer_int_enable(_timer_);
+    //am_hal_ctimer_int_enable(_timer_);
 #if AM_CMSIS_REGS
     NVIC_EnableIRQ(CTIMER_IRQn);
 #else
