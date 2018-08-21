@@ -56,12 +56,13 @@ static void KeyTest(void)
 	App_Lcd_TaskEventSet(&LcdMsg, 0);
 	#endif
 	
-	#if 0	// 字库测试
+	#if 1	// 字库测试
 	// 点阵读取测试
-//	FontPram.code.codeGB = 0xC4BF;		// "目"
-//	FontPram.dataAddr = tDotBuf;
-//	FontPram.sizeKind = GB_SIZE_16X16;
-//	Mid_Font_ReadGB(&FontPram);
+	font_para_t FontPram;
+	FontPram.code.codeGB = 0xC4BF;		// "目"
+	FontPram.dataAddr = tDotBuf;
+	FontPram.sizeKind = GB_SIZE_16X16;
+	Mid_Font_ReadGB(&FontPram);
 	
 	FontPram.code.codeASCII = 0x41;		// "A"
 	FontPram.dataAddr = tDotBuf;

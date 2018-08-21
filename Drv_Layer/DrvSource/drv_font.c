@@ -208,7 +208,7 @@ uint8 Drv_Font_ReadGB2313(uint16 GB, uint8 gb_size,uint8 *pdata)
 			hzbmp16(SEL_GB, GB, 0, 16,pdata);
 			break;
 		case GB_SIZE_24X24://GB_SIZE_24X24
-//			hzbmp24(SEL_GB, GB, 0, 24,pdata);
+			hzbmp24(SEL_GB, GB, 0, 24,pdata);
 			break;
 		default:
 			break;
@@ -225,7 +225,7 @@ uint8 Drv_Font_ReadGB2313(uint16 GB, uint8 gb_size,uint8 *pdata)
 //**********************************************************************
 uint16 Drv_Font_Unicode2GB(uint16 unicode)
 {
-//    return U2G(unicode);
+    return U2G(unicode);
 }
 
 //**********************************************************************
@@ -299,12 +299,13 @@ uint8 Drv_Font_SendCmd(font_cmd ft_cmd)
 //**********************************************************************
 uint8 Drv_Font_SelfTest(void)
 {
+	#if 0
     uint8 i;
     uint8 DZ_Data[16];
     uint8  A_8X16_compare1[16] = 
     {
     	0x00,0x80,0x70,0x08,0x70,0x80,0x00,0x00,0x3c,0x03,0x02,0x02,0x02,0x03,0x3c,0x00
-    };
+    }; 
 	
 	Drv_Font_Open();
 	Drv_Font_SendCmd(FONT_SLEEP_CMD);
@@ -327,8 +328,8 @@ uint8 Drv_Font_SelfTest(void)
 		SEGGER_RTT_printf(0,"Error: font read 'A'\n");
 	Drv_Font_SendCmd(FONT_SLEEP_CMD);
 	Drv_Font_Close();	
+	#endif
 	
-	#if 0
     uint8 result = Ret_OK;
 #if(FONT_CS_PIN != IO_UNKNOW)
     uint8 i;
@@ -348,7 +349,6 @@ uint8 Drv_Font_SelfTest(void)
 	Drv_Font_Close();		
 #endif
     return result;
-	#endif
 }
 
 //**********************************************************************
