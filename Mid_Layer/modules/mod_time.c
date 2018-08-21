@@ -12,6 +12,8 @@ static QueueHandle_t 	sTime_QueueHandle;				// 队列句柄
 // RTC每秒调用事件处理
 static inline void Mod_Time_RTCSecHandler(void)
 {
+//	rtc_time_s tRTCTime;
+	
 	//Mid_Rtc_TimeRead(&tRTCTime);
 	//MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
 
@@ -54,25 +56,14 @@ static inline void Mod_Time_RTCSecHandler(void)
 	}	
 }
 
-//**********************************************************************
-// 函数功能: 按键调度任务处理函数
-// 输入参数：
-// 返回参数：
-static void Mod_Time_RTCHandler(Mod_Time_TaskMsg_T*	Msg)
+// RTC每分钟调用事件处理
+static inline void Mod_Time_RTCMinHandler(void)
 {
-	rtc_time_s tRTCTime;
+//	rtc_time_s tRTCTime;
 	
-	switch (Msg->Param.RTC.Msg)
-	{
-		case eMidRTCMsgHalfSec:
-			break;
-		case eMidRTCMsgSec:
-			Mod_Time_RTCSecHandler();
-			break;
-		case eMidRTCMsgMin:
-			Mid_Rtc_TimeRead(&tRTCTime);
-			MOD_TIME_RTT_LOG(0,"eMidRTCMsgMin %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);	
-			
+//	Mid_Rtc_TimeRead(&tRTCTime);
+//	MOD_TIME_RTT_LOG(0,"eMidRTCMsgMin %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);		
+	
 			// 每分钟检测一次闹钟
 //			if(Mid_AlarmClock_Check(&tRTCTime))
 			{
@@ -81,10 +72,52 @@ static void Mod_Time_RTCHandler(Mod_Time_TaskMsg_T*	Msg)
 
 				// 向APP层发送闹钟事件
 				
-			}
-		
+			}	
+}
+
+// RTC每小时调用事件处理
+static inline void Mod_Time_RTCHourHandler(void)
+{
+	// 向APP获取天气信息
+    if(bleState == BLE_CONNECT)
+    {
+       App_Protocal_GetWeatherProcess();
+    }
+}
+
+// RTC每天调用事件处理
+static inline void Mod_Time_RTCDayHandler(void)
+{
+	
+}
+
+//**********************************************************************
+// 函数功能: 按键调度任务处理函数
+// 输入参数：
+// 返回参数：
+static void Mod_Time_RTCHandler(Mod_Time_TaskMsg_T*	Msg)
+{
+	switch (Msg->Param.RTC.Msg)
+	{
+		case eMidRTCMsgHalfSec:
+			break;
+		case eMidRTCMsgSec:
+			Mod_Time_RTCSecHandler();
+			break;
+		case eMidRTCMsgMin:
+			Mod_Time_RTCSecHandler();
+			Mod_Time_RTCMinHandler();
+			break;
+		case eMidRTCMsgHour:
+			Mod_Time_RTCSecHandler();
+			Mod_Time_RTCMinHandler();			
+			Mod_Time_RTCHourHandler();
 			break;
 		case eMidRTCMsgDay:
+			Mod_Time_RTCSecHandler();
+			Mod_Time_RTCMinHandler();	
+			Mod_Time_RTCHourHandler();		
+			Mod_Time_RTCDayHandler();
 			break;
 		default:
 			break;

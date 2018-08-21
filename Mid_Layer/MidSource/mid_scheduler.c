@@ -45,6 +45,16 @@ static uint32_t tTmp;
 uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
+
+	#if 0	// 天气场景测试
+	Mid_Weahter_Param_t	tWeahter;
+	
+	App_Protocal_GetWeatherProcess();
+	 vTaskDelay(200);
+	Mid_WeatherScene_TendencyGet(&tWeahter);
+	MID_SCHD_RTT_LOG(0,"tWeahter %04X, %02X, %02X, %02X, \r\n", tWeahter.Status, tWeahter.CurTemperature, tWeahter.MaxTemperature, tWeahter.MinTemperature);
+	#endif
+	
 	#if 0	// NandFlash 测试
 	Mid_NandFlash_SelfTest();
 	#endif
@@ -56,7 +66,7 @@ static void KeyTest(void)
 	App_Lcd_TaskEventSet(&LcdMsg, 0);
 	#endif
 	
-	#if 1	// 字库测试
+	#if 0	// 字库测试
 	// 点阵读取测试
 	font_para_t FontPram;
 	FontPram.code.codeGB = 0xC4BF;		// "目"

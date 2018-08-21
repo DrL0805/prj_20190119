@@ -42,6 +42,7 @@ static void Bsp_Init(void)
 	// 场景数据初始化
 	Mid_SleepScene_Init();
 	Mid_SportScene_Init();
+	Mid_WeatherScene_Init();
 	
 	App_Protocal_Init();
 	Mid_Ble_Init();
@@ -52,7 +53,7 @@ static void Bsp_Init(void)
 }
 
 static void Task_Init(void)
-{	
+{
 	// 中间层任务 
 	Mid_Schd_TaskCreate();
 //	Mid_GPS_TaskCreate();

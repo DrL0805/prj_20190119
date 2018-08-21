@@ -32,6 +32,7 @@
 #include "BLE_Stack.h"  //BLE stack
 #include "sm_os.h"
 #include "sm_sys.h"
+#include "main.h"
 
 #define APP_ProtocalTimeOut   15
 #define APP_AuthorTimeOut     60
@@ -522,7 +523,7 @@ static void App_Ble_UpdateConnStatus(app_conn_type status)
 //**********************************************************************
 static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
 {
-//	weahter_s weatherinfo;
+	Mid_Weahter_Param_t tWeather;
     uint32  u32temp;
     uint8   u8temp;      //记录中间值
     uint8   u8Route;     //记录路由
@@ -852,12 +853,13 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
 
     case PROT_PHONE_WEATHER: //0x10
     Protocal_SendACK(protocal, SUCCESS);
-//    weatherinfo.weahterStatus = (uint16)protocal->packet.att.load.content.parameter[0] <<8 
-//                                | protocal->packet.att.load.content.parameter[1];
-//    weatherinfo.weahterMinTemperature =  protocal->packet.att.load.content.parameter[2]; 
-//    weatherinfo.weahterMaxTemperature =  protocal->packet.att.load.content.parameter[3];   
-//    weatherinfo.weahterCurTemperature =  protocal->packet.att.load.content.parameter[4];                       
-//    Mid_WeatherScene_TendencySet(&weatherinfo);
+	
+    tWeather.Status = (uint16)protocal->packet.att.load.content.parameter[0] <<8 
+                                | protocal->packet.att.load.content.parameter[1];
+    tWeather.MinTemperature =  protocal->packet.att.load.content.parameter[2]; 
+    tWeather.MaxTemperature =  protocal->packet.att.load.content.parameter[3];   
+    tWeather.CurTemperature =  protocal->packet.att.load.content.parameter[4];                       
+	Mid_WeatherScene_TendencySet(&tWeather);
     break;
     }
     return Ret_OK;
@@ -911,18 +913,18 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
                        
         if (appRemindState && (phoneState.state != PHONE_STATE_PHOTO))//switch open systermConfig.
         {
-//            if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
-//            {
-//                if (protocal->packet.att.routeMsg == 0x21)
-//                {
-//                    u8temp = IOS;
-//                }
-//                else
-//                {
-//                    u8temp = ANDROID;
-//                }
-//                // App_NewMsgAnalysis(u8temp, appRemindState,NEW_REMIND); //新提醒
-//            }
+            if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
+            {
+                if (protocal->packet.att.routeMsg == 0x21)
+                {
+                    u8temp = IOS;
+                }
+                else
+                {
+                    u8temp = ANDROID;
+                }
+                // App_NewMsgAnalysis(u8temp, appRemindState,NEW_REMIND); //新提醒
+            }
         }               
         break;
     case PROT_MSG_SWITCH://0x02：通知开关

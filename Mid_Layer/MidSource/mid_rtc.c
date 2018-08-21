@@ -100,6 +100,8 @@ eMidRTCMsg RtcSecPeriodProcess(void)
 		rtcTime.sec = 0;
 		if(rtcTime.min > 59)   //every Hour
 		{
+			tRetVal = eMidRTCMsgHour;
+			
 			rtcTime.min = 0;
 			rtcTime.hour ++;
 			if(rtcTime.hour > 23)  //every Day

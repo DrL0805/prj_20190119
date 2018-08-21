@@ -50,6 +50,7 @@ typedef struct
 typedef enum
 {
     eMidRTCMsgDay,     //RTC一天时间计时完成消息
+	eMidRTCMsgHour,
     eMidRTCMsgMin,     //RTC每分钟计时完成消息
     eMidRTCMsgSec,     //RTC每秒计时完成消息
     eMidRTCMsgHalfSec, //相比RtcSecCbInit延时半秒，计时完成消息

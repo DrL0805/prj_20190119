@@ -16,6 +16,8 @@
 // scene
 #include "mid_sport_scene.h"
 #include "mid_sleep_scene.h"
+#include "mid_weather_scene.h"
+
 
 // mid
 #include "mid_scheduler.h"
