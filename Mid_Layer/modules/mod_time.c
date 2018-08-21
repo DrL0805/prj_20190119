@@ -12,10 +12,9 @@ static QueueHandle_t 	sTime_QueueHandle;				// 队列句柄
 // RTC每秒调用事件处理
 static inline void Mod_Time_RTCSecHandler(void)
 {
-//	rtc_time_s tRTCTime;
-	
-	//Mid_Rtc_TimeRead(&tRTCTime);
-	//MOD_TIME_RTT_LOG(0,"RTC %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
+	rtc_time_s tRTCTime;
+	Mid_Rtc_TimeRead(&tRTCTime);
+	MOD_TIME_RTT_LOG(0,"20%d/%d/%d %02d:%02d:%02d \r\n",tRTCTime.year, tRTCTime.month, tRTCTime.day, tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
 
 	// 每秒检测一次锁屏事件
 	App_Window_LockWinCnt();

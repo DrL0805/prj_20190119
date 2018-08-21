@@ -14,7 +14,6 @@ void Mod_Sys_Init(void)
 void Mod_Sys_PwrOn(void)
 {
 	App_Protocal_BleStateSet(BLE_POWERON);
-	bleState = BLE_BROADCAST;	
 	
 	Mid_Rtc_Start();
 	
@@ -27,3 +26,7 @@ void Mod_Sys_PwrOff(void)
 {
 	
 }
+
+
+
+

@@ -2265,7 +2265,7 @@ void App_Protocal_BleStateSet(uint8 newblestate)
    if((newblestate != BLE_SLEEP) && (newblestate != BLE_BROADCAST) && //关,开广播
       (newblestate != BLE_POWERON) && (newblestate != BLE_POWEROFF))  //蓝牙上电 /掉电
        return ;
-       
+   
 #if(BLE_STACK_RUN_INMCU == 0)
 	ble_msg_t bleMsg;
     uint8 u8len;
@@ -2293,6 +2293,22 @@ void App_Protocal_BleStateSet(uint8 newblestate)
     }
 
 #endif
+	
+	/* 修改蓝牙状态 */
+	if((newblestate == BLE_POWERON) || (newblestate == BLE_BROADCAST))
+	{
+		bleState = BLE_BROADCAST;	
+	}
+	
+	if(newblestate == BLE_SLEEP)
+	{
+		bleState = BLE_SLEEP;	
+	}
+	
+	if(newblestate == BLE_POWEROFF)
+	{
+		bleState = BLE_POWEROFF;
+	}	
 }
 
 //**********************************************************************

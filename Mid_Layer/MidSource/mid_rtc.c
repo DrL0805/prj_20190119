@@ -166,14 +166,14 @@ void Mid_Rtc_Init(void)
     //open a ctimer for RTC
     SMDrv_CTimer_Open(RTC_CTIMER_MODULE,127,Mid_Rtc_Isr);
 
-	rtcTime.year  	= 0;
+	rtcTime.year  	= 18;
 	rtcTime.month	= 1;
 	rtcTime.day		= 1;
 	rtcTime.hour    = 0;
 	rtcTime.min		= 0;
 	rtcTime.sec		= 0;
 	rtcTime.zone    = 0x0800;
-	rtcTime.week 	= eMidRTCWeekSAT;
+	rtcTime.week 	= AutoWeek(rtcTime.year, rtcTime.month, rtcTime.day);;
 	hasInit			= 1;
 }
 
