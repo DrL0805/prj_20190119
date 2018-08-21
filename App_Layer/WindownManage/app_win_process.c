@@ -154,8 +154,10 @@ eAppWinHandle App_Window_Process(App_Win_Msg_T message)
 	// 处理完后，打印当前窗口句柄
 	APP_WIN_RTT_LOG(0,"After WinHanle %d %d \n",AppWinParam.CurrWinHanle, AppWinParam.CurrSubWinHandle);
 	
-	// 如果是按键，重置锁屏计数
-	if(eWinMenukey == message.MenuTag)
+	// 如果是按键点击屏幕等，重置锁屏计数
+	if( eWinMenukey == message.MenuTag || 
+	    eWinMenuSlide == message.MenuTag || 
+		eWinMenuClick == message.MenuTag )
 	{
 		AppWinParam.LockWinCnt = 0;
 	}

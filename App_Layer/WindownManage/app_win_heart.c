@@ -4,6 +4,8 @@
 static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
 static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
+static eAppWinHandle App_Win_LockMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message);
+
 
 #define AppHeartWinMenuNum (sizeof(AppHeartWinMenu)/sizeof(AppHeartWinMenu[0]))	
 App_Win_Menu_T	AppHeartWinMenu[] = 
@@ -11,6 +13,7 @@ App_Win_Menu_T	AppHeartWinMenu[] =
 	{eWinMenukey, App_Win_KeyMenuHandler},
 	{eWinMenuSlide, App_Win_SlideMenuHandler},
 	{eWinMenuClick, App_Win_ClickMenuHandler},
+	{eWinMenuLock, App_Win_LockMenuHandler},
 };
 
 //**********************************************************************
@@ -21,9 +24,7 @@ App_Win_Menu_T	AppHeartWinMenu[] =
 static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_KeyMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
+
 	switch(message.val)
 	{
 		case MID_KEY0_SHORT:
@@ -32,7 +33,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
             {
             	case eAppSubWinHandle0:
             	case eAppSubWinHandle1:
-            		TmpWinHandle = eTimeWinHandle;
+            		AppWinParam.CurrWinHanle = eTimeWinHandle;
 					break;
             	default:
             		break;
@@ -54,7 +55,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
             {
             	case eAppSubWinHandle0:
             	case eAppSubWinHandle1:
-            		TmpWinHandle = eStoreWinHandle;
+            		AppWinParam.CurrWinHanle = eStoreWinHandle;
 					break;
             	default:
             		break;
@@ -63,7 +64,7 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 		default: break;
 	}
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -74,16 +75,14 @@ static eAppWinHandle App_Win_KeyMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_
 static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_SlideMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
+
 	switch(message.val)
 	{
 		case 0:		// 上滑
 			switch (AppWinParam.CurrSubWinHandle)
             {
             	case eAppSubWinHandle0:
-					TmpWinHandle = ePressWinHandle;
+					AppWinParam.CurrWinHanle = ePressWinHandle;
 					break;
             	case eAppSubWinHandle1:
 					break;
@@ -95,7 +94,7 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 			switch (AppWinParam.CurrSubWinHandle)
             {
             	case eAppSubWinHandle0:
-					TmpWinHandle = eSportWinHandle;
+					AppWinParam.CurrWinHanle = eSportWinHandle;
 					break;
             	case eAppSubWinHandle1:
 					break;
@@ -118,7 +117,7 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 		default: break;
 	}
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;	
 }
 
 //**********************************************************************
@@ -129,9 +128,7 @@ static eAppWinHandle App_Win_SlideMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
 {
 	APP_WIN_RTT_LOG(0,"App_Win_ClickMenuHandler \r\n");
-	
-	eAppWinHandle TmpWinHandle = WinHandle;
-	
+
 	switch (AppWinParam.CurrSubWinHandle)
 	{
 		case eAppSubWinHandle0: 
@@ -140,11 +137,30 @@ static eAppWinHandle App_Win_ClickMenuHandler(eAppWinHandle WinHandle,App_Win_Ms
 		case eAppSubWinHandle1:
 			break;
 		default: break;
-	}	
+	}
 	
-	return TmpWinHandle;	
+	return AppWinParam.CurrWinHanle;
 }
 
+//**********************************************************************
+// 函数功能：  窗口菜单处理函数
+// 输入参数：  WinHandle	当前窗口句柄
+// 				message		传入参数
+// 返回参数：  成功创建的窗口句柄
+static eAppWinHandle App_Win_LockMenuHandler(eAppWinHandle WinHandle,App_Win_Msg_T message)
+{
+	APP_WIN_RTT_LOG(0,"App_Win_LockMenuHandler \r\n");
+
+	// 进入锁屏前保存之前窗口类型
+	AppWinParam.LastWinHanle = AppWinParam.CurrWinHanle;
+	AppWinParam.LastSubWinHandle = AppWinParam.CurrSubWinHandle;	
+	
+	// 进入锁屏窗口
+	AppWinParam.CurrWinHanle = eLockWinHandle;
+	AppWinParam.LockWinCnt = 0;
+	
+	return AppWinParam.CurrWinHanle;	
+}
 
 //**********************************************************************
 // 函数功能：  窗口初始化
@@ -154,9 +170,19 @@ eAppWinHandle App_HeartWin_Init(void)
 {
 	APP_WIN_RTT_LOG(0,"App_HeartWin_Init \r\n");
 	
-	AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+	if(AppWinParam.WinRecoverFlg)
+	{
+		AppWinParam.WinRecoverFlg = false;
+		AppWinParam.CurrWinHanle = eHeartWinHandle;
+		AppWinParam.CurrSubWinHandle = AppWinParam.LastSubWinHandle;
+	}
+	else
+	{
+		AppWinParam.CurrWinHanle = eHeartWinHandle;
+		AppWinParam.CurrSubWinHandle = eAppSubWinHandle0;
+	}
 	
-	return eHeartWinHandle;
+	return AppWinParam.CurrWinHanle;
 }
 
 //**********************************************************************

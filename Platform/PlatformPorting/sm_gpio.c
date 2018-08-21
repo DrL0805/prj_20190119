@@ -95,7 +95,7 @@ ret_type SMDrv_GPIO_Open(uint32 u32PinNum,uint32 *config_opt,gpio_cb g_callback)
     bfGpioCfg.uFuncSel = 3;  //IO口功能选择，=3是GPIO
     if((u32PinNum == KEY_S0_PIN) || (u32PinNum == KEY_S1_PIN) || (u32PinNum == KEY_S2_PIN))
     {
-        bfGpioCfg.eIntDir    = AM_HAL_GPIO_PIN_INTDIR_LO2HI;//AM_HAL_GPIO_PIN_INTDIR_HI2LO;   //下降沿触发
+        bfGpioCfg.eIntDir    = AM_HAL_GPIO_PIN_INTDIR_HI2LO;   //下降沿触发//AM_HAL_GPIO_PIN_INTDIR_LO2HI;//
         bfGpioCfg.eGPOutcfg  = AM_HAL_GPIO_PIN_OUTCFG_DISABLE; //输入
         bfGpioCfg.eGPInput   = AM_HAL_GPIO_PIN_INPUT_ENABLE;
 		bfGpioCfg.ePullup    = AM_HAL_GPIO_PIN_PULLUP_WEAK;
