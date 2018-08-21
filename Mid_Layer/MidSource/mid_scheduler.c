@@ -46,6 +46,11 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
+	#if 0	// RTC时间测试
+	// 手表主动向APP获取时间接口好像不能用，待和app确认
+	App_Protocal_AdjustTimeprocess();
+	#endif
+	
 	#if 0	// 天气场景测试
 	Mid_Weahter_Param_t	tWeahter;
 	

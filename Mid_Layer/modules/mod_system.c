@@ -3,6 +3,9 @@
 
 void Mod_Sys_Init(void)
 {
+	// 开机状态
+	resetStatus = 1;
+	
 	// 开机后默认进入仓储模式
 	App_Window_Init(eStoreWinHandle);
 	
@@ -18,7 +21,11 @@ void Mod_Sys_PwrOn(void)
 	Mid_Rtc_Start();
 	
 //	Mid_SportScene_Start();	
-	Mid_SleepScene_Start();		
+	Mid_SleepScene_Start();	
+
+	// 马达震动提示开机
+	Mid_Motor_ParamSet(eMidMotorShake4Hz, 2);
+	Mid_Motor_ShakeStart();		
 }
 
 // 长按进入仓储

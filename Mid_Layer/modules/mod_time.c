@@ -77,7 +77,7 @@ static inline void Mod_Time_RTCMinHandler(void)
 // RTC每小时调用事件处理
 static inline void Mod_Time_RTCHourHandler(void)
 {
-	// 向APP获取天气信息
+	// 每小时向APP获取天气信息
     if(bleState == BLE_CONNECT)
     {
        App_Protocal_GetWeatherProcess();
@@ -87,7 +87,11 @@ static inline void Mod_Time_RTCHourHandler(void)
 // RTC每天调用事件处理
 static inline void Mod_Time_RTCDayHandler(void)
 {
-	
+	// 每天同步RTC时间
+    if (bleState == BLE_CONNECT)
+    {
+        App_Protocal_AdjustTimeprocess();
+    }	
 }
 
 //**********************************************************************

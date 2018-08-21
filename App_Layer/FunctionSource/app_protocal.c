@@ -43,7 +43,7 @@
 #define APP_OTATIMERFREQ      1     //OTA数据接收监测频率 1s
 
 
-#if(APP_PROTOCAL_DEBUG ==1)
+#if (APP_PROTOCAL_DEBUG ==1)
 #define ENABLE_PRINT_DATA       0
 #define Analy_Debug(x) SEGGER_RTT_printf x
 #else
@@ -627,6 +627,7 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
     break;
 
     case PROT_DATE:   //rtc 0x08
+		MOD_PDU_RTT_LOG(0, "PROT_DATE \r\n");
     if (protocal->packet.att.load.content.interfaceType == PROTOCAL_SET || 
         protocal->packet.att.load.content.interfaceType == PROTOCAL_RET)
     {
