@@ -14,7 +14,7 @@ static inline void Mod_Time_RTCSecHandler(void)
 {
 	rtc_time_s tRTCTime;
 	Mid_Rtc_TimeRead(&tRTCTime);
-	MOD_TIME_RTT_LOG(0,"20%d/%d/%d %02d:%02d:%02d \r\n",tRTCTime.year, tRTCTime.month, tRTCTime.day, tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
+//	MOD_TIME_RTT_LOG(0,"20%d/%d/%d %02d:%02d:%02d \r\n",tRTCTime.year, tRTCTime.month, tRTCTime.day, tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
 
 	// 每秒检测一次锁屏事件
 	App_Window_LockWinCnt();
@@ -68,8 +68,8 @@ static inline void Mod_Time_RTCMinHandler(void)
 		// 拍照状态不触发闹钟
 		if (phoneState.state != PHONE_STATE_PHOTO)
 		{
-			// 打印当前闹钟ID
-			MOD_TIME_RTT_LOG(0,"AlarmClock Id %d \r\n",CurRingAlarmIdGet());
+			// 向APP发送闹钟事件
+			App_Protocal_AlarmRing(CurRingAlarmIdGet());
 
 			// 向APP层发送闹钟事件
 			Mid_Motor_ParamSet(eMidMotorShake2Hz, 5);

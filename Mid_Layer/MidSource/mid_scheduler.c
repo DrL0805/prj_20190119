@@ -46,7 +46,15 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
-	#if 1	// 闹钟测试
+	
+	
+	#if 0	// 读取身高体重信息
+	bodyInfo_s tbodyInfo;
+	Mid_SportScene_BodyInfoRead(&tbodyInfo);
+	MID_SCHD_RTT_LOG(0,"age %d, bodyHeight %d, bodyWeight %d, sex %d \r\n", tbodyInfo.age,tbodyInfo.bodyHeight,tbodyInfo.bodyWeight,tbodyInfo.sex);
+	#endif
+	
+	#if 0	// 闹钟测试，读取闹钟信息
 	alarm_clock_t	tAlarm;
 	
 	MID_SCHD_RTT_LOG(0,"tAlarm:reptswitch, hour, min, delayswitch, alarmswitch \r\n");

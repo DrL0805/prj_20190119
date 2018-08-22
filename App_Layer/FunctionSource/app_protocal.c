@@ -817,6 +817,7 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
     break;
 
     case PROT_WEIGHT_HEIGHT://0x0E
+	MOD_PDU_RTT_LOG(0,"PROT_WEIGHT_HEIGHT %d \n",protocal->packet.att.load.content.interfaceType);
     if (protocal->packet.att.load.content.interfaceType == PROTOCAL_SET)
     {
         Protocal_SendACK(protocal, SUCCESS);
@@ -902,7 +903,8 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
 	
 	switch(protocal->packet.att.load.content.interfaceIndex2)
     {
-    case PROT_NEW_MSG:  //0x01: 新消息通知
+    case PROT_NEW_MSG:  //0x01: 新消息通知，（未使用，使用的是消息详情）
+//		MOD_PDU_RTT_LOG(0, "PROT_NEW_MSG");
     Protocal_SendACK(protocal,SUCCESS);
         appRemindState = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
                        + ((uint32)protocal->packet.att.load.content.parameter[1] << 16)
@@ -923,11 +925,12 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
                 {
                     u8temp = ANDROID;
                 }
-                // App_NewMsgAnalysis(u8temp, appRemindState,NEW_REMIND); //新提醒
+//				App_NewMsgAnalysis(u8temp, appRemindState,NEW_REMIND); //新提醒
             }
-        }               
+        }
         break;
-    case PROT_MSG_SWITCH://0x02：通知开关
+    case PROT_MSG_SWITCH://0x02：通知开关，app设置消息提醒开关是发送此指令
+//		MOD_PDU_RTT_LOG(0, "PROT_MSG_SWITCH");
         if (protocal->packet.att.load.content.interfaceType == PROTOCAL_GET)//获取
         {
 			protocal->packet.att.loadLength += 4;
@@ -962,6 +965,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
     case PROT_INCALL_RESP:   // 0x03: 来电通知反馈，只产品发送
         break;
     case PROT_CANCEL_MSG:    //0x04:消息取消通知 
+		MOD_PDU_RTT_LOG(0, "PROT_CANCEL_MSG");
     Protocal_SendACK(protocal,SUCCESS);
     appRemindState = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
                    + ((uint32)protocal->packet.att.load.content.parameter[1] << 16)
@@ -972,21 +976,22 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
                    
     if (appRemindState)//switch open systermConfig.
     {
-//        if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
-//        {
-//            if (protocal->packet.att.routeMsg == 0x21)
-//            {
-//                u8temp = IOS;
-//            }
-//            else
-//            {
-//                u8temp = ANDROID;
-//            }
-//            App_NewMsgAnalysis(u8temp, appRemindState,CANCEL_REMIND);//提醒取消
-//        }
+        if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
+        {
+            if (protocal->packet.att.routeMsg == 0x21)
+            {
+                u8temp = IOS;
+            }
+            else
+            {
+                u8temp = ANDROID;
+            }
+            App_NewMsgAnalysis(u8temp, appRemindState,CANCEL_REMIND);//提醒取消
+        }
     }  
         break;
         case PROT_MSG_DETAIL_SWITCH: //0x05: 消息详情开关
+			MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL_SWITCH");
         if (protocal->packet.att.load.content.interfaceType == PROTOCAL_SET)//设置 
         {
            systermConfig.appDetailRemindSwitch     = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
@@ -1000,6 +1005,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         }
         break;
     case PROT_MSG_DETAIL://0x06:消息详情通知
+		MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL");
         //现在暂无消息详情开关，都用提醒开关
         systermConfig.appDetailRemindSwitch = systermConfig.appRemindSwitch;
 
@@ -1012,18 +1018,18 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         //fix 8:2018.6.20
         if (systermConfig.appDetailRemindSwitch && (phoneState.state != PHONE_STATE_PHOTO))//启动通知才进行处理
         { 
-//            if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
-//            {
-//                if (protocal->packet.att.routeMsg == 0x21)
-//                {
-//                    u8temp = IOS;
-//                }
-//                else
-//                {
-//                    u8temp = ANDROID;
-//                }
-////               App_RemindManage_Process(protocal->packet,u8temp);
-//            }        
+            if(!((systermConfig.notDisturbSwitch == SWITCH_ON) && (App_NotDisturdTimeCheck())))//勿扰时间段内不提醒
+            {
+                if (protocal->packet.att.routeMsg == 0x21)
+                {
+                    u8temp = IOS;
+                }
+                else
+                {
+                    u8temp = ANDROID;
+                }
+               App_RemindManage_Process(protocal->packet,u8temp);
+            }        
         }               
         break;
 
