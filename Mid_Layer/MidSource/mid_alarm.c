@@ -13,7 +13,7 @@ static Mid_Alarm_Param_t	Mid_Alarm;
 // 返回参数：
 //	    0xff 闹钟响铃；0x00 闹钟不响铃
 // 调用：Mid_AlarmClock_Check
-uint8 Mid_AlarmClock_DelayRing(void)
+static uint8 Mid_AlarmClock_DelayRing(void)
 {
 	if(Mid_Alarm.RingSwitch)
 	{
@@ -36,26 +36,22 @@ uint8 Mid_AlarmClock_DelayRing(void)
 }
 
 //**********************************************************************
-// 函数功能:	闹钟贪睡功能打开
+// 函数功能:	闹钟贪睡功能打开，若一个闹钟贪睡次数未完，又来了新的闹钟。则重置贪睡次数
 // 输入参数：	
-//      无
 // 返回参数：
-//	    无
 // 调用:Mid_AlarmClock_Check
- void Mid_AlarmClock_DelayRing_Open(void)
+static void Mid_AlarmClock_DelayRing_Open(void)
 {
 	Mid_Alarm.RingSwitch 	        = 1;
 	Mid_Alarm.accTimer			= 0;
 	Mid_Alarm.RingCnt			= 0;
-
 }
 
 //**********************************************************************
 // 函数功能:	闹钟贪睡功能关闭
 // 输入参数：	
-//      无
 // 返回参数：
-//	    无
+// 调用：Mid_AlarmClock_Write
  void Mid_AlarmClock_DelayRing_Close(void)
 {
 	Mid_Alarm.RingSwitch = 0;
@@ -83,7 +79,7 @@ uint8 Mid_AlarmClock_Check(rtc_time_s *curtime)
 				// 若为重复闹钟，根据当前星期几判断闹钟是响应
 				if((Mid_Alarm.Clock[i].reptswitch & (0x01 << curtime->week)) && Mid_Alarm.Clock[i].hour == curtime->hour
 					&& Mid_Alarm.Clock[i].min == curtime->min) 
-				{	
+				{
 					Mid_AlarmClock_DelayRing_Open();	
                     CurRingAlarmIdSet(i);					
 					return 0xff;	
@@ -97,7 +93,7 @@ uint8 Mid_AlarmClock_Check(rtc_time_s *curtime)
 					Mid_AlarmClock_DelayRing_Open();
 					CurRingAlarmIdSet(i);
 					Mid_Alarm.Clock[i].alarmswitch = 0;	// 只响一次后关闭闹钟
-                    return 0xff;					
+                    return 0xff;
 				}						
 			}
 		}

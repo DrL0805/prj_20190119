@@ -46,7 +46,18 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
-	#if 0	// RTC时间测试
+	#if 1	// 闹钟测试
+	alarm_clock_t	tAlarm;
+	
+	MID_SCHD_RTT_LOG(0,"tAlarm:reptswitch, hour, min, delayswitch, alarmswitch \r\n");
+	for(uint32_t i = 0;i < eMidAlarmGroupNum;i++)
+	{
+		Mid_AlarmClock_Read(&tAlarm, i);
+		MID_SCHD_RTT_LOG(0,"tAlarm %02X, %02X, %02X, %02X, %02X\r\n", tAlarm.reptswitch, tAlarm.hour, tAlarm.min, tAlarm.delayswitch, tAlarm.alarmswitch);
+	}
+	#endif
+	
+	#if 0	// 获取RTC时间测试
 	// 手表主动向APP获取时间接口好像不能用，待和app确认
 	App_Protocal_AdjustTimeprocess();
 	#endif

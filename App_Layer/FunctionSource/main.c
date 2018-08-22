@@ -23,12 +23,12 @@ static void Bsp_Init(void)
 	
 	
 	// 测试闹钟
-	alarm_clock_t tAlarm;
-	tAlarm.alarmswitch = 1;
-	tAlarm.reptswitch = 0;
-	tAlarm.hour = 0;
-	tAlarm.min = 2;
-	Mid_AlarmClock_Write(&tAlarm, 3);
+//	alarm_clock_t tAlarm;
+//	tAlarm.alarmswitch = 1;
+//	tAlarm.reptswitch = 0;
+//	tAlarm.hour = 0;
+//	tAlarm.min = 1;
+//	Mid_AlarmClock_Write(&tAlarm, 3);
 	
 	Mid_StopWatch_Init();	// 秒表
 	Mid_Countdown_Init();	// 倒计时

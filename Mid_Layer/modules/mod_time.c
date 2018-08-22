@@ -58,20 +58,24 @@ static inline void Mod_Time_RTCSecHandler(void)
 // RTC每分钟调用事件处理
 static inline void Mod_Time_RTCMinHandler(void)
 {
-//	rtc_time_s tRTCTime;
+	rtc_time_s tRTCTime;
 	
-//	Mid_Rtc_TimeRead(&tRTCTime);
-//	MOD_TIME_RTT_LOG(0,"eMidRTCMsgMin %02d:%02d:%02d \r\n",tRTCTime.hour, tRTCTime.min, tRTCTime.sec);		
-	
-			// 每分钟检测一次闹钟
-//			if(Mid_AlarmClock_Check(&tRTCTime))
-			{
-				// 打印当前闹钟ID
-//				MOD_TIME_RTT_LOG(0,"AlarmClock Id %d \r\n",CurRingAlarmIdGet());
+	Mid_Rtc_TimeRead(&tRTCTime);
 
-				// 向APP层发送闹钟事件
-				
-			}	
+	// 每分钟检测一次闹钟
+	if(Mid_AlarmClock_Check(&tRTCTime))
+	{
+		// 拍照状态不触发闹钟
+		if (phoneState.state != PHONE_STATE_PHOTO)
+		{
+			// 打印当前闹钟ID
+			MOD_TIME_RTT_LOG(0,"AlarmClock Id %d \r\n",CurRingAlarmIdGet());
+
+			// 向APP层发送闹钟事件
+			Mid_Motor_ParamSet(eMidMotorShake2Hz, 5);
+			Mid_Motor_ShakeStart();
+		}
+	}	
 }
 
 // RTC每小时调用事件处理

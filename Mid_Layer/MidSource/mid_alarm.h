@@ -16,7 +16,7 @@ typedef enum
 
 typedef struct 
 {
-	uint8 reptswitch;			// 闹钟重复开关 bit0~bit6: sun~sat,bit7:overall switch
+	uint8 reptswitch;			// 闹钟重复开关 bit0~bit6: sun~sat,bit7:重复开关
 	uint8 hour;
 	uint8 min;
 	uint8 delayswitch;	    // 闹钟贪睡开关 1: delay alarm enable, 0: delay alarm disable

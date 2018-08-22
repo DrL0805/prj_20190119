@@ -627,7 +627,6 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
     break;
 
     case PROT_DATE:   //rtc 0x08
-		MOD_PDU_RTT_LOG(0, "PROT_DATE \r\n");
     if (protocal->packet.att.load.content.interfaceType == PROTOCAL_SET || 
         protocal->packet.att.load.content.interfaceType == PROTOCAL_RET)
     {
