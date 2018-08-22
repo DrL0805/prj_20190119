@@ -46,7 +46,13 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
+	#if 1
+		
+	#endif
 	
+	#if 0	// 查找手机指令测试
+		App_Protocal_FinePhone();
+	#endif
 	
 	#if 0	// 读取身高体重信息
 	bodyInfo_s tbodyInfo;
@@ -190,20 +196,30 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 {
 	MID_SCHD_RTT_LOG(0,"Schd Msg Key %d %d \r\n", Msg->Id, Msg->Param.Key.Val);
 	KeyTest();
+
+	App_Win_Msg_T WinMsg;
 	
-	if (phoneState.state == PHONE_STATE_AUTHOR)
+	switch(phoneState.state)
 	{
-		phoneState.state = PHONE_STATE_NORMAL;
-		App_Protocal_AuthorPass();
-	}
-	else
-	{
-		// 向上层发送按键消息
-		App_Win_Msg_T WinMsg;
-		WinMsg.MenuTag = eWinMenukey;	
-		WinMsg.val = Msg->Param.Key.Val;
-		
-		App_Win_TaskEventSet(&WinMsg);		
+		case PHONE_STATE_PHOTO:
+			App_Protocal_TakePhoto();
+			break;
+		case PHONE_STATE_AUTHOR:
+			phoneState.state = PHONE_STATE_NORMAL;
+			App_Protocal_AuthorPass();			
+			break;
+		case PHONE_STATE_PAIRE:
+			break;
+		case PHONE_STATE_HRM:
+			break;
+		case PHONE_STATE_NORMAL:
+			// 向上层发送按键消息
+			WinMsg.MenuTag = eWinMenukey;	
+			WinMsg.val = Msg->Param.Key.Val;
+			
+			App_Win_TaskEventSet(&WinMsg);			
+			break;
+		default: break;
 	}
 }
 

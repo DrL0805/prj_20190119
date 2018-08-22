@@ -578,14 +578,14 @@ static uint8 Analysis_DeviceInfo(ble_msg_t *protocal)
     if(protocal->packet.att.load.content.interfaceIndex2 == PROT_PROD_SOC)
     {           
         protocal->packet.att.loadLength += 1;
-        protocal->packet.att.load.content.parameter[0] = u8temp;   //剩余电量
+        protocal->packet.att.load.content.parameter[0] = 98;//u8temp;   //剩余电量
         protocal->packet.att.load.content.parameter[1] = Mid_Ble_CheckSum(&protocal->packet);
     }
     else
     {
         protocal->packet.att.loadLength += 2;
-        protocal->packet.att.load.content.parameter[0] = batType;  //可充电电池
-        protocal->packet.att.load.content.parameter[1] = u8temp;   //剩余电量
+        protocal->packet.att.load.content.parameter[0] = 1;//batType;  //可充电电池
+        protocal->packet.att.load.content.parameter[1] = 98;//u8temp;   //剩余电量
         protocal->packet.att.load.content.parameter[2] = Mid_Ble_CheckSum(&protocal->packet);
     }
     Mid_Ble_SendMsg(protocal);
@@ -1034,6 +1034,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         break;
 
          case PROT_PHOTO_MODE: //拍照
+		MOD_PDU_RTT_LOG(0, "PROT_PHOTO_MODE %d", protocal->packet.att.load.content.parameter[0]);
         if (protocal->packet.att.load.content.parameter[0] == 0x00)//退出
         {
 //            message.state   = EXIT_TAKE_PHOTO_MODE;
