@@ -23,6 +23,7 @@ void Mod_Sys_PwrOn(void)
 //	Mid_SportScene_Start();	
 	Mid_SleepScene_Start();	
 	Mid_GestureScene_Start();
+	Scene_Sedentary_Start();
 
 	// 马达震动提示开机
 	Mid_Motor_ParamSet(eMidMotorShake4Hz, 2);

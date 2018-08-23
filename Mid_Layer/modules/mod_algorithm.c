@@ -10,7 +10,7 @@ static QueueHandle_t 	sAlgo_QueueHandle;				// 队列句柄
 #define 	ALGO_TASK_QUEUE_WAIT_TICK		100			// 队列阻塞时间
 #define		ALGO_TASK_QUEUE_SIZE				sizeof(Mod_Algo_TaskMsg_T)
 
-static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
+static void Mod_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 {
 	MID_ACCEL_PARA_T	tMidAccel;
 	
@@ -28,9 +28,12 @@ static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 	
 	// 动作识别算法处理
 	Mid_GestureScene_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
+	
+	// 久坐算法处理
+	Scene_Sedentary_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
 }
 
-static void Mid_Algo_HrmHandler(Mod_Algo_TaskMsg_T* Msg)
+static void Mod_Algo_HrmHandler(Mod_Algo_TaskMsg_T* Msg)
 {
 	MOD_ALGO_RTT_LOG(0,"HrmCalculate \r\n");
 	
@@ -58,7 +61,7 @@ static void Mod_Algo_TaskProcess(void *pvParameters)
 			switch (Msg.Id)
             {
             	case eAlgoTaskMsgAccel:
-					Mid_Algo_AccelHandler(&Msg);
+					Mod_Algo_AccelHandler(&Msg);
             		break;
             	case eAlgoTaskMsgGyro:
             		break;
@@ -67,7 +70,7 @@ static void Mod_Algo_TaskProcess(void *pvParameters)
 				case eAlgoTaskMsgGPS:
 					break;
 				case eAlgoTaskMsgHrm:
-					Mid_Algo_HrmHandler(&Msg);
+					Mod_Algo_HrmHandler(&Msg);
             	default:
             		break;
             }

@@ -23,7 +23,7 @@
 #define MID_GESTURE_RTT_ERR(...)
 #endif
 
-#define GESTURE_SCENE_PERIOD_MS	(200)	// 睡眠算法调用周期
+#define GESTURE_SCENE_PERIOD_MS	(1000)	// 久坐算法调用周期
 
 typedef struct
 {
