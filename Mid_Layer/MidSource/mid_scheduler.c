@@ -46,8 +46,9 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
-	#if 1
-		
+	#if 1	// 心率测试
+//	MID_SCHD_RTT_LOG(0,"Drv_Hrm_CheckHw %d \r\n", Mid_Hrm_FactoryTest());
+	HrmStart();
 	#endif
 	
 	#if 0	// 查找手机指令测试

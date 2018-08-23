@@ -5,6 +5,7 @@
 #include "rtos.h"
 
 #include "drv_mtimer.h"
+#include "mid_hrm.h"
 #include "mid_front.h"
 #include "mid_key.h"
 #include "mid_motor.h"

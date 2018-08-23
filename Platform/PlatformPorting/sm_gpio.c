@@ -108,12 +108,18 @@ ret_type SMDrv_GPIO_Open(uint32 u32PinNum,uint32 *config_opt,gpio_cb g_callback)
     }
     else if ((u32PinNum == HR_INT2_PIN) || (u32PinNum == BAT_CHG_PIN))
     {
+        bfGpioCfg.eIntDir    = AM_HAL_GPIO_PIN_INTDIR_LO2HI;   //上升沿触发
+        bfGpioCfg.eGPOutcfg  = AM_HAL_GPIO_PIN_OUTCFG_DISABLE; //输入
+        bfGpioCfg.eGPInput   = AM_HAL_GPIO_PIN_INPUT_ENABLE;		
+		
+		#if 0
         bfGpioCfg.eGPOutcfg  = AM_HAL_GPIO_PIN_OUTCFG_DISABLE; //输入
         bfGpioCfg.eGPInput   = AM_HAL_GPIO_PIN_INPUT_ENABLE;
         if(u32PinNum == BAT_CHG_PIN)
         {
             bfGpioCfg.ePullup    = AM_HAL_GPIO_PIN_PULLUP_6K;
         }
+		#endif
     }
     else             //GPIO设置为输出
     {

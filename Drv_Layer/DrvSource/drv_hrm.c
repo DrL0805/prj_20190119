@@ -20,10 +20,13 @@
 //ALG file
 #include "drv_accelerate.h"
 // pah
-#include "pah_driver_8011_reg.h"
+#include "system_clock.h"
+#include "pah_driver.h"
+#include "pah_hrd_function.h"
+#include "pah_verify.h"
 #include "pah_verify_8011_option.h"
-#include "pah_8011_internal.h"
-#include "pah8011es_user.h"
+#include "pah_comm.h"
+#include "pah_driver_types.h"
 
 #include "drv_hrm.h"
 
@@ -41,16 +44,11 @@ typedef enum
 
 /*******************variable define*******************/
 static  bsp_status_e _hrmbspstate;
-
-//heart rate adc data reference
-uint8     *fifo_data;
-uint32    fifo_data_num_per_ch;
-uint32    fifo_ch_num;
-uint8     ppg_mode_flag;
-bool        is_touched ;
+static volatile bool has_interrupt_button = false;
+static volatile bool has_interrupt_pah = false;
 
 /*******************function define*******************/
-void (*BspHrmCalculateCompleteCb)(uint8 HrmValue );
+void (*BspHrmCalculateCompleteCb)(uint8 HrmValue);
 
 //记录mid层事件回调
 hrm_event_cb Hrm_Event_CB;
@@ -60,6 +58,7 @@ void hrm_isr(uint32 u32PinNum)
     if(u32PinNum == HR_INT1_PIN)
     {
         Hrm_Event_CB(HR_DATA_READY);
+		has_interrupt_pah = true;
     }
     else if(u32PinNum == HR_INT2_PIN)
     {
@@ -80,7 +79,6 @@ void hrm_isr(uint32 u32PinNum)
 //**********************************************************************
 uint8 Drv_Hrm_Open(hrm_event_cb hrm_cb)
 {
-	bool ret1;
 	static uint8 initflag = 1;
  
 	//power on
@@ -105,12 +103,8 @@ uint8 Drv_Hrm_Open(hrm_event_cb hrm_cb)
 	
 	if(initflag)
 	{
-		ret1 = pah_init();
-		if (!ret1)
-		{
-			return Ret_Fail;
-		}
-        initflag = 0;
+		pah8series_ppg_dri_HRD_init();
+        initflag = 0;			
 	}
 		
     return Ret_OK;
@@ -146,13 +140,13 @@ uint8 Drv_Hrm_Close(void)
 // 0x00   :  操作成功
 // 0x02   :  参数非法
 //**********************************************************************
-uint8 Drv_Hrm_SetCallBack(hrm_event_cb hrm_cb)
-{
-    if(hrm_cb == NULL)
-        return Ret_InvalidParam;
-    Hrm_Event_CB = hrm_cb;
-    return Ret_OK;
-}
+//uint8 Drv_Hrm_SetCallBack(hrm_event_cb hrm_cb)
+//{
+//    if(hrm_cb == NULL)
+//        return Ret_InvalidParam;
+//    Hrm_Event_CB = hrm_cb;
+//    return Ret_OK;
+//}
 
 //**********************************************************************
 //函数功能： 启动心率测量：心率模块配置、状态设置    
@@ -165,19 +159,8 @@ uint8 Drv_Hrm_Start(void)
 {
     if(_hrmbspstate == bsp_status_disabled) //8011在BSPdisable状态下，不能启动测量。
         return Ret_Fail;    
-    
-//    bool ret1 = pah_init();
-//    if (!ret1)
-//    {
-//        return 0xFF;
-//    }
-
-#if defined(PPG_MODE_ONLY)
-    start_healthcare_ppg();
-#else
-    start_healthcare_touch_only();//
-#endif
-    _state.status = main_status_start_healthcare;
+	
+	pah8series_ppg_HRD_start();
     _hrmbspstate = bsp_status_started;
 
     return Ret_OK;
@@ -191,10 +174,8 @@ uint8 Drv_Hrm_Start(void)
 // 0xFF   :  操作失败
 //**********************************************************************
 uint8 Drv_Hrm_Stop(void)
-{    
-    hr_algorithm_close();
-    stop_healthcare();
-    _state.status = main_status_idle;
+{    	
+	pah8series_ppg_HRD_stop();
     _hrmbspstate = bsp_status_stopped;
     return 0x00;
 }
@@ -244,6 +225,23 @@ uint8 Drv_Hrm_FactoryTest(uint16 ui16lightleak[3])
 }
 
 //**********************************************************************
+//函数功能： 检测HR硬件
+//输入参数： 无    
+//返回参数：
+// 0x00   :  操作成功
+// 0xFF   :  操作失败
+//**********************************************************************
+uint8 Drv_Hrm_CheckHw(void)
+{
+    pah_ret ret = pah_err_unknown;
+
+    _hrmbspstate = bsp_status_factorytest_started;
+    ret = pah_verify_init();
+    _hrmbspstate = bsp_status_factorytest_stopped;
+    return (ret == pah_success) ? 0x00 : 0xFF;
+}
+
+//**********************************************************************
 //函数功能： 读取心率模块有效触摸状态
 //输入参数： 
 //ui8istouch： 触摸状态指针    
@@ -253,7 +251,7 @@ uint8 Drv_Hrm_FactoryTest(uint16 ui16lightleak[3])
 //**********************************************************************
 uint8 Drv_Hrm_ReadTouchStatus(uint8 *ui8istouch)
 {
-    if (SMDrv_GPIO_InBitRead(HR_INT2_PIN))//pah_is_touched()
+    if (pah_is_touched())
     {
         *ui8istouch = ON_TOUCH;
     }
@@ -275,48 +273,8 @@ uint8 Drv_Hrm_ReadTouchStatus(uint8 *ui8istouch)
 //**********************************************************************
 uint8 Drv_Hrm_Calculate(uint64_t ui64timestamp)
 {
-	pah_ret ret = pah_err_unknown;
-    uint8 hrm_temp;
-
-    ret = pah_task();
-    if (ret == pah_success)
-    {
-        if(pah_is_ppg_mode())
-        {
-            ppg_mode_flag   =0 ;
-            #ifdef PPG_MODE_ONLY
-            ppg_mode_flag   = 1 ;
-            #endif
-            is_touched      = pah_is_touched();
-            if (is_touched || ppg_mode_flag)
-            {
-                fifo_data               = pah_get_fifo_data();
-                fifo_data_num_per_ch    = pah_fifo_data_num_per_ch();
-                fifo_ch_num             = pah_get_fifo_ch_num();    
-                hrm_temp                = report_fifo_data(ui64timestamp, fifo_data, fifo_data_num_per_ch, fifo_ch_num, is_touched);//调整采样率，计算心率
-                if (hrm_temp != 0)
-                {
-                    BspHrmCalculateCompleteCb(hrm_temp);//心率计算完成且有效回调
-                }               
-            }
-            else
-            {
-                hr_algorithm_close();
-                start_healthcare_touch_only();
-            }
-        }
-        else if (pah_touch_mode == pah_query_mode())
-        {
-            if (pah_is_touched())
-            {
-                start_healthcare_ppg_touch(ui64timestamp);
-            }                    
-        }
-    }
-    else
-    {
-        return 0xFF;            
-    }
+	pah8series_ppg_dri_HRD_task(&has_interrupt_pah ,&has_interrupt_button ,&ui64timestamp);
+    hrd_alg_task();
     return 0x00;
 }
 
@@ -374,8 +332,6 @@ uint8 Drv_Hrm_SetAccelMen(int16 *fifodata, uint16 fifo_size)
 //**********************************************************************
 uint8 Drv_Hrm_SetAccelRange(uint8 newrange)
 {
-    pah8011_gSensor_Range_Set(newrange);
-
     return 0;
 }
 

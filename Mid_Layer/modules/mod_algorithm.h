@@ -32,6 +32,7 @@ typedef enum
 	eAlgoTaskMsgGyro,
 	eAlgoTaskMsgMagnetism,
 	eAlgoTaskMsgGPS,
+	eAlgoTaskMsgHrm,
 	eAlgoTaskMsgMax,
 }eAlgoTaskMsgId;
 

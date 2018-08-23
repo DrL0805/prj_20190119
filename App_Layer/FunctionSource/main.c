@@ -15,6 +15,7 @@ static void Bsp_Init(void)
 //	Mid_Magnetism_Init();
 	Mid_Accel_Init();
 	Mid_Gyro_Init();
+	Mid_Hrm_Init();
 	
 	Drv_RGBLcd_Init();
 	

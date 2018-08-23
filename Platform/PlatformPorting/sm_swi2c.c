@@ -1461,10 +1461,10 @@ ret_type SMDrv_SWI2C_Open(iic_module modul,uint32 u32speed)
 
     switch(modul)
     {
-    case HR_IIC_MODULE:     //心率 iic4
-        u8iic_id = IIC4;
-        u32scl_pin=IIC4_SCL;
-        u32sda_pin=IIC4_SDA;
+    case HR_IIC_MODULE:     //心率 
+        u8iic_id = IIC3;
+        u32scl_pin=IIC3_SCL;
+        u32sda_pin=IIC3_SDA;
         break;
     case AP_IIC_MODULE:     //气压和bat共用 iic1
     case BAT_IIC_MODULE:
@@ -1517,10 +1517,10 @@ ret_type SMDrv_SWI2C_Close(iic_module modul)
     
     switch(modul)
     {
-    case HR_IIC_MODULE:     //心率 iic4
-        u8iic_id = IIC4;
-        u32scl_pin=IIC4_SCL;
-        u32sda_pin=IIC4_SDA;
+    case HR_IIC_MODULE:     //心率 
+        u8iic_id = IIC3;
+        u32scl_pin=IIC3_SCL;
+        u32sda_pin=IIC3_SDA;
         break;
     case AP_IIC_MODULE:     //气压和bat共用 iic1
     case BAT_IIC_MODULE:
@@ -1570,12 +1570,12 @@ ret_type SMDrv_SWI2C_WriteCmd(iic_module modul,uint8 deviceAddr, uint8 regAddr)
     switch(modul)
     {
     case HR_IIC_MODULE:     //心率 iic4
-        if(swiic_info[IIC4].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+        if(swiic_info[IIC3].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_4_Start();
-        I2C_4_WriteByte(deviceAddr);
-        I2C_4_WriteByte(regAddr);
-        I2C_4_Stop();
+        I2C_3_Start();
+        I2C_3_WriteByte(deviceAddr);
+        I2C_3_WriteByte(regAddr);
+        I2C_3_Stop();
         break;
 	
     case AP_IIC_MODULE:      //气压和bat共用 iic1
@@ -1626,13 +1626,13 @@ ret_type SMDrv_SWI2C_Write(iic_module modul,uint8 deviceAddr, uint8 regAddr, uin
     switch(modul)
     {
     case HR_IIC_MODULE:     //心率 iic4
-        if(swiic_info[IIC4].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+        if(swiic_info[IIC3].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_4_Start();
-        I2C_4_WriteByte(deviceAddr);
-        I2C_4_WriteByte(regAddr);
-        I2C_4_WriteBytes(data_Point, length);
-        I2C_4_Stop();
+        I2C_3_Start();
+        I2C_3_WriteByte(deviceAddr);
+        I2C_3_WriteByte(regAddr);
+        I2C_3_WriteBytes(data_Point, length);
+        I2C_3_Stop();
         break;
     case AP_IIC_MODULE:		   //气压和bat共用 iic1
     case BAT_IIC_MODULE:
@@ -1685,16 +1685,16 @@ ret_type SMDrv_SWI2C_Read(iic_module modul,uint8 deviceAddr, uint8 regAddr, uint
 {
     switch(modul)
     {
-    case HR_IIC_MODULE:     //心率 iic4
-        if(swiic_info[IIC4].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
+    case HR_IIC_MODULE:     //心率 
+        if(swiic_info[IIC3].bOpen == FALSE)  //IIC已经关闭，不能做读写操作
             return Ret_NoInit;
-        I2C_4_Start();
-        I2C_4_WriteByte(deviceAddr);
-        I2C_4_WriteByte(regAddr);
-        I2C_4_Start();
-        I2C_4_WriteByte(deviceAddr | 0x01);
-        I2C_4_ReadBytes(data_Point, length);
-        I2C_4_Stop();
+        I2C_3_Start();
+        I2C_3_WriteByte(deviceAddr);
+        I2C_3_WriteByte(regAddr);
+        I2C_3_Start();
+        I2C_3_WriteByte(deviceAddr | 0x01);
+        I2C_3_ReadBytes(data_Point, length);
+        I2C_3_Stop();
         break;
     case AP_IIC_MODULE:    //气压和bat共用 iic1
 	case BAT_IIC_MODULE:

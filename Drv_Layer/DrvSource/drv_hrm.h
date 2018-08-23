@@ -44,7 +44,7 @@ extern uint8 Drv_Hrm_Close(void);
 // 0x00   :  操作成功
 // 0x02   :  参数非法
 //**********************************************************************
-extern uint8 Drv_Hrm_SetCallBack(hrm_event_cb hrm_cb);
+//extern uint8 Drv_Hrm_SetCallBack(hrm_event_cb hrm_cb);
 
 //**********************************************************************
 //函数功能： 启动心率测量：心率模块配置、状态设置    
@@ -136,7 +136,16 @@ extern void accelerometer_stop(void);
 //**********************************************************************
 extern uint8 Drv_Hrm_FactoryTest(uint16 ui16lightleak[3]);
 
+//**********************************************************************
+//函数功能： 检测HR硬件
+//输入参数： 无    
+//返回参数：
+// 0x00   :  操作成功
+// 0xFF   :  操作失败
+//**********************************************************************
+extern uint8 Drv_Hrm_CheckHw(void);
 
- uint8 Drv_Hrm_SetCalCompleteCb(void (*cb)(uint8 hrmval));
+
+uint8 Drv_Hrm_SetCalCompleteCb(void (*cb)(uint8 hrmval));
 
 #endif

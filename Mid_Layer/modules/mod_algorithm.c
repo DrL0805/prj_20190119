@@ -23,7 +23,16 @@ static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 	// 睡眠算法处理
 	Mid_SleepScene_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
 	
+	// 心率所需Gsensor数据
+	HrmAccelMenSet(tMidAccel.LatestData);	
+}
+
+static void Mid_Algo_HrmHandler(Mod_Algo_TaskMsg_T* Msg)
+{
+	MOD_ALGO_RTT_LOG(0,"HrmCalculate \r\n");
 	
+	/* 心率计算 */
+	HrmCalculate();	
 }
 
 static void Mod_Algo_TaskProcess(void *pvParameters)
@@ -54,6 +63,8 @@ static void Mod_Algo_TaskProcess(void *pvParameters)
 					break;
 				case eAlgoTaskMsgGPS:
 					break;
+				case eAlgoTaskMsgHrm:
+					Mid_Algo_HrmHandler(&Msg);
             	default:
             		break;
             }
