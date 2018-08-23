@@ -77,14 +77,15 @@
 #define BLE_32KHz       IO_UNKNOW
 #endif
 
-#ifdef LCD_MODULE
-#define LCD_EXIN_PIN    13    //LCD
-#define LCD_DISP_PIN    19
-#define LCD_SCS_PIN     26
-#define LCD_EN_PIN      31
-#define LCD_SI_PIN      32
-#define LCD_SCLK_PIN    33
-#endif
+
+#define RGB_LCD_EN_PIN			31			// RGB_LCD 是能供电脚
+#define RGB_LCD_SCLK_PIN		33
+#define RGB_LCD_SI_PIN			32
+#define RGB_LCD_SCS_PIN			26
+#define RGB_LCD_EXTCOMIN_PIN	34
+#define RGB_LCD_DISP_PIN		19
+#define RGB_LCD_EXTMODE_PIN		IO_UNKNOW	// 固定拉高
+#define RGB_LCD_BCKLED_PIN		47
 
 #ifdef TOUCH_MODULE
 #define TOUCH_RST_PIN   29    //触摸屏

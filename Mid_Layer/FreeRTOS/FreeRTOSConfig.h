@@ -56,7 +56,7 @@ extern "C"
 #define configUSE_PREEMPTION                    1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 
-#ifdef AM_PART_APOLLO2
+#ifdef AM_PART_APOLLO3
 #define configCPU_CLOCK_HZ                      48000000UL
 #else
 #define configCPU_CLOCK_HZ                      24000000UL
@@ -64,7 +64,7 @@ extern "C"
 #define configTICK_RATE_HZ                      1000
 #define configMAX_PRIORITIES                    32
 #define configMINIMAL_STACK_SIZE                (256)
-#define configTOTAL_HEAP_SIZE                   (31 * 1024)
+#define configTOTAL_HEAP_SIZE                   (80 * 1024)
 #define configMAX_TASK_NAME_LEN                 16
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1

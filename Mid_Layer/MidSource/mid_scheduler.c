@@ -46,7 +46,7 @@ uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
 
-	#if 1	// 心率测试
+	#if 0	// 心率测试
 //	MID_SCHD_RTT_LOG(0,"Drv_Hrm_CheckHw %d \r\n", Mid_Hrm_FactoryTest());
 	HrmStart();
 	#endif
@@ -90,10 +90,10 @@ static void KeyTest(void)
 	Mid_NandFlash_SelfTest();
 	#endif
 	
-	#if 0	// LCD测试
+	#if 1	// LCD测试
 	App_Lcd_TaskMsg_T	LcdMsg;
 	
-	LcdMsg.Id = eAppLcdEventInside;
+	LcdMsg.Id = eAppLcdEventOuter;
 	App_Lcd_TaskEventSet(&LcdMsg, 0);
 	#endif
 	

@@ -9,13 +9,13 @@ static void Bsp_Init(void)
 	
 	Drv_MTimer_Init();		// 放在初始化前面
 
-	Mid_Uart_Init();
+//	Mid_Uart_Init();
 	Mid_Key_Init();
 	Mid_Motor_Init();
 //	Mid_Magnetism_Init();
 	Mid_Accel_Init();
 	Mid_Gyro_Init();
-	Mid_Hrm_Init();
+//	Mid_Hrm_Init();
 	
 	Drv_RGBLcd_Init();
 	

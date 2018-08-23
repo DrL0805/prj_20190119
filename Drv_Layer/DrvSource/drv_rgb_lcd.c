@@ -217,15 +217,13 @@ static uint32_t Drv_RGBLcd_Multiple3Bit(uint16_t StartLine, uint8_t LineNum,uint
 // 返回参数：	
 static void Drv_RGBLcd_IOinit(void)
 {
-    uint32 u32PinConfig = GPIO_PIN_OUTPUT;  //default set pin as output
-	
-//    SMDrv_GPIO_Open(RGB_LCD_EN_PIN,			&u32PinConfig,NULL);
-//	SMDrv_GPIO_Open(RGB_LCD_SCLK_PIN,		&u32PinConfig,NULL);
-//    SMDrv_GPIO_Open(RGB_LCD_SI_PIN,			&u32PinConfig,NULL);
-//	SMDrv_GPIO_Open(RGB_LCD_SCS_PIN,		&u32PinConfig,NULL);
-//    SMDrv_GPIO_Open(RGB_LCD_EXTCOMIN_PIN,	&u32PinConfig,NULL);
-//	SMDrv_GPIO_Open(RGB_LCD_DISP_PIN,		&u32PinConfig,NULL);
-	//    SMDrv_GPIO_Open(RGB_LCD_BCKLED_PIN,	&u32PinConfig,NULL);	// 暂时初始化背光口，因为跟烧录口公用，会导致无法烧录和调试
+    SMDrv_GPIO_Open(RGB_LCD_EN_PIN,			NULL, NULL);
+	SMDrv_GPIO_Open(RGB_LCD_SCLK_PIN,		NULL, NULL);
+    SMDrv_GPIO_Open(RGB_LCD_SI_PIN,			NULL, NULL);
+	SMDrv_GPIO_Open(RGB_LCD_SCS_PIN,		NULL, NULL);
+    SMDrv_GPIO_Open(RGB_LCD_EXTCOMIN_PIN,	NULL, NULL);
+	SMDrv_GPIO_Open(RGB_LCD_DISP_PIN,		NULL, NULL);
+	SMDrv_GPIO_Open(RGB_LCD_BCKLED_PIN,	    NULL, NULL);	// 暂时初始化背光口，因为跟烧录口公用，会导致无法烧录和调试
 	
 	Drv_RGBLcd_IOSleep();
 }

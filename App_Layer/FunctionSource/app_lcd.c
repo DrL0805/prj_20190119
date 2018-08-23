@@ -8,27 +8,30 @@ static QueueHandle_t 	sLcd_QueueHandle;				// 队列句柄
 #define 	LCD_TASK_QUEUE_WAIT_TICK		100			// 队列阻塞时间
 #define		LCD_TASK_QUEUE_SIZE				sizeof(App_Lcd_TaskMsg_T)
 
+static TimerHandle_t 	sLcd_TimerHandle;	
+
 App_Lcd_Param_t	App_Lcd;
 
-//**********************************************************************
-// 函数功能: 背光处理函数
-// 输入参数：
-// 返回参数：
-// 调用：每秒调用一次
-void App_Lcd_BacklightProess(void)
+static void sLcd_TimerCallBack(TimerHandle_t xTimer)
 {
-	App_Lcd.BacklightCnt++;
+	App_Lcd_TaskMsg_T LcdMsg;
+	
+	LcdMsg.Id = eAppLcdEventInside;
+	App_Lcd_TaskEventSet(&LcdMsg, 1);
 }
 
-void App_Lcd_BacklightSet(uint32_t Cnt)
+void App_Lcd_TimerStart(uint32_t TimerMs)
 {
-	App_Lcd.BacklightCnt = Cnt;
+	// 更新定时器参数并启动
+//	xTimerStart(sLcd_TimerHandle,0);
+	xTimerChangePeriod(sLcd_TimerHandle, pdMS_TO_TICKS(TimerMs), 3);
 }
 
-uint32_t App_Lcd_BacklightGet(void)
+void App_Lcd_TimerStop(void)
 {
-	return App_Lcd.BacklightCnt;
+	xTimerStop(sLcd_TimerHandle,3);
 }
+
 
 static void App_Lcd_TaskProcess(void *pvParameters)
 {
@@ -41,6 +44,13 @@ static void App_Lcd_TaskProcess(void *pvParameters)
 		APP_LCD_RTT_ERR(0,"Lcd_Queue Create Err \r\n");
 	}
 	
+	// 创建定时器
+    sLcd_TimerHandle=xTimerCreate((const char*		)"sLcd_Timer",
+									    (TickType_t			)(200/portTICK_PERIOD_MS),
+							            (UBaseType_t		)pdFALSE,
+							            (void*				)1,
+							            (TimerCallbackFunction_t)sLcd_TimerCallBack); //周期定时器，周期1s(1000个时钟节拍)，周期模式	
+	
 	APP_LCD_RTT_LOG(0,"App_Lcd_TaskCreate Suc \r\n");
 
 	while(1)
@@ -50,11 +60,13 @@ static void App_Lcd_TaskProcess(void *pvParameters)
 		{
 			switch (Msg.Id)
             {
-            	case eAppLcdEventOuter:
-					APP_LCD_RTT_LOG(0,"Lcd Msg eAppLcdEventOuter \r\n");
+            	case eAppLcdEventOuter:		// 外部事件，如key、触摸等
+					App_Lcd_TimerStart(1000);
+					APP_LCD_RTT_LOG(0,"eAppLcdEventOuter \r\n");
             		break;
-            	case eAppLcdEventInside:
-					APP_LCD_RTT_LOG(0,"Lcd Msg eAppLcdEventOuter \r\n");
+            	case eAppLcdEventInside:	// 内事件，如LCD定时器等
+					Mid_Lcd_Test();
+					APP_LCD_RTT_LOG(0,"eAppLcdEventInside \r\n");
             		break;
             	default:
 					APP_LCD_RTT_LOG(0,"Lcd Msg Err \r\n");
