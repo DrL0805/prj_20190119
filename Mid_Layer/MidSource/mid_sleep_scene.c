@@ -12,8 +12,6 @@ Mid_SleepScene_Param_t	Mid_SleepScene;
 // 调用：睡眠算法，1秒1次
 void Mid_SleepScene_algorithm(int16 *xyzData, uint32_t Interval)
 {
-	int8  	G_sensorBuf[3];
-	
 	if(false == Mid_SleepScene.EnableFlg)
 		return;	
 	

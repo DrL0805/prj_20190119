@@ -8,14 +8,14 @@ static void Bsp_Init(void)
 	Mid_Schd_ParamInit();	// 共享互斥初始化放在前面
 	
 	Drv_MTimer_Init();		// 放在初始化前面
-
+	
 //	Mid_Uart_Init();
 	Mid_Key_Init();
 	Mid_Motor_Init();
 //	Mid_Magnetism_Init();
 	Mid_Accel_Init();
 	Mid_Gyro_Init();
-//	Mid_Hrm_Init();
+	Mid_Hrm_Init();
 	
 	Drv_RGBLcd_Init();
 	
@@ -44,6 +44,7 @@ static void Bsp_Init(void)
 	Mid_SleepScene_Init();
 	Mid_SportScene_Init();
 	Mid_WeatherScene_Init();
+	Mid_GestureScene_Init();
 	
 	App_Protocal_Init();
 	Mid_Ble_Init();
@@ -55,7 +56,7 @@ static void Bsp_Init(void)
 
 static void Task_Init(void)
 {
-	// 中间层任务 
+	// 中间层任务
 	Mid_Schd_TaskCreate();
 //	Mid_GPS_TaskCreate();
 //	Mid_MIC_TaskCreate();

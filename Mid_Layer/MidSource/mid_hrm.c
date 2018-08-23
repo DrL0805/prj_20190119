@@ -54,7 +54,7 @@ static void HrmProcess_Isr(hrm_event event)
 //		MID_HRM_RTT_LOG(0,"HR_TOUCH \r\n");	// 调用触摸函数，暂时没做处理		
     }
     else if(event == HR_DATA_READY)
-    { 
+    {
 //		MID_HRM_RTT_LOG(0,"HR_DATA_READY \r\n");
 	
 		// 通知算法模块

@@ -45,14 +45,17 @@ static uint32_t tTmp;
 uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
-
 	#if 0	// 心率测试
+	uint8_t tTouchFlg;
 //	MID_SCHD_RTT_LOG(0,"Drv_Hrm_CheckHw %d \r\n", Mid_Hrm_FactoryTest());
 	HrmStart();
+	vTaskDelay(pdMS_TO_TICKS(50));
+	Mid_Hrm_TouchStatusRead(&tTouchFlg);
+	MID_SCHD_RTT_LOG(0,"Mid_Hrm_TouchStatusRead %d \r\n", tTouchFlg);
 	#endif
 	
 	#if 0	// 查找手机指令测试
-		App_Protocal_FinePhone();
+	App_Protocal_FinePhone();
 	#endif
 	
 	#if 0	// 读取身高体重信息
@@ -90,7 +93,7 @@ static void KeyTest(void)
 	Mid_NandFlash_SelfTest();
 	#endif
 	
-	#if 1	// LCD测试
+	#if 0	// LCD测试
 	App_Lcd_TaskMsg_T	LcdMsg;
 	
 	LcdMsg.Id = eAppLcdEventOuter;
@@ -202,6 +205,13 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 	
 	switch(phoneState.state)
 	{
+		case PHONE_STATE_NORMAL:
+			// 向上层发送按键消息
+			WinMsg.MenuTag = eWinMenukey;	
+			WinMsg.val = Msg->Param.Key.Val;
+			
+			App_Win_TaskEventSet(&WinMsg);			
+			break;		
 		case PHONE_STATE_PHOTO:
 			App_Protocal_TakePhoto();
 			break;
@@ -212,13 +222,6 @@ static void Mid_Schd_KeyHandler(Mid_Schd_TaskMsg_T* Msg)
 		case PHONE_STATE_PAIRE:
 			break;
 		case PHONE_STATE_HRM:
-			break;
-		case PHONE_STATE_NORMAL:
-			// 向上层发送按键消息
-			WinMsg.MenuTag = eWinMenukey;	
-			WinMsg.val = Msg->Param.Key.Val;
-			
-			App_Win_TaskEventSet(&WinMsg);			
 			break;
 		default: break;
 	}

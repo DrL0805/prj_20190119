@@ -7,10 +7,11 @@
 typedef enum
 {
     GESTURE_NULL,
-    RAISE_HAND,
+    RAISE_HAND,     /* 抬手 */
+    FREE_HAND,      /* 放手 */
+    TURN_WRIST,     /* 翻腕 */
+    SHAKE_HAND,     /* 甩手 */
 } gesture_type;
 
-extern uint16_t SwitchFreq; /* 采样频率，ms */
-gesture_type gesture_process(int16_t *accValue);   /* 抬手亮屏判断 */
-
+gesture_type gesture_process(int16_t *accValue);   /* 手势判断，200ms调用 */
 #endif

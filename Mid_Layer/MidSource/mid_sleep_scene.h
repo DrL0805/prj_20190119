@@ -8,7 +8,7 @@
 
 typedef struct
 {
-	bool		EnableFlg;		// 使用计步算法标志
+	bool		EnableFlg;		
 	uint8_t		SampleId;
 	uint32_t 	IntervalMs;		
 }Mid_SleepScene_Param_t;

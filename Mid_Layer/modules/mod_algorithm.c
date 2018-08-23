@@ -17,14 +17,17 @@ static void Mid_Algo_AccelHandler(Mod_Algo_TaskMsg_T* Msg)
 	// 读取数据
 	Mid_Accel_ParamGet(&tMidAccel);
 	
+	// 心率所需Gsensor数据
+	HrmAccelMenSet(tMidAccel.LatestData);	
+	
 	// 计步算法处理
 	Mid_SportScene_Algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
 	
 	// 睡眠算法处理
 	Mid_SleepScene_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
 	
-	// 心率所需Gsensor数据
-	HrmAccelMenSet(tMidAccel.LatestData);	
+	// 动作识别算法处理
+	Mid_GestureScene_algorithm(tMidAccel.LatestData, tMidAccel.SamplePeriod);
 }
 
 static void Mid_Algo_HrmHandler(Mod_Algo_TaskMsg_T* Msg)

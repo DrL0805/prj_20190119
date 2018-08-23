@@ -4,7 +4,7 @@
 #include "platform_common.h"
 #include "drv_accelerate.h"
 
-#define MID_ACCEL_ID_MAX	(5)
+#define MID_ACCEL_ID_MAX	(8)
 
 // 采样范围
 typedef enum
