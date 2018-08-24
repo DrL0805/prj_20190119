@@ -94,7 +94,7 @@ extern "C"
 #define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               2
 #define configTIMER_QUEUE_LENGTH                16
-#define configTIMER_TASK_STACK_DEPTH            configMINIMAL_STACK_SIZE
+#define configTIMER_TASK_STACK_DEPTH            512//configMINIMAL_STACK_SIZE
 
 /* Interrupt nesting behaviour configuration. */
 #define configKERNEL_INTERRUPT_PRIORITY         (0x7 << 5)

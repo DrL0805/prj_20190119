@@ -18,6 +18,7 @@
 #include "mid_sleep_scene.h"
 #include "mid_weather_scene.h"
 #include "mid_gesture_scene.h"
+#include "mid_heartrate_scene.h"
 #include "scene_sedentary.h"
 
 // mid

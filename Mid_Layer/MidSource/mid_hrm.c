@@ -15,10 +15,8 @@
 
 #define SystermTickPeriod           1000/APP_1SEC_TICK      //TICK时钟周期
 
-static  uint8     mHeartRate      = 0xff;
-static uint16     hrmAccelReadId;
-static uint8      hrmEventCnt     = 0;
-static uint8      hrmAccelRange   = 0;
+static  uint8     mHeartRate      = 0xff;	
+static uint8      hrmEventCnt     = 0;		// 嵌套计数
 
 //**********************************************************************
 //函数功能：心率计算完成处理     
@@ -37,8 +35,6 @@ void HrmCalculateCompleteProcess(uint8 hrmval)
     {
         mHeartRate = 30;
     }
-    else
-        ;
 	
 	/* 向上层发送心率获取成功事件 */
 	MID_HRM_RTT_LOG(0,"HrmCalculateCompleteProcess %d \r\n", mHeartRate);
@@ -91,9 +87,18 @@ void HrmAccelMenSet(int16 *fifodata)
 // 0xFF   :  操作失败
 uint16 HrmStart(void)   
 { 
-	Drv_Hrm_Open(HrmProcess_Isr);
-	Drv_Hrm_Start();
-
+	if(255 == hrmEventCnt)
+		return 0xFF;
+	
+	hrmEventCnt++;
+	if(1 == hrmEventCnt)	// 首次打开心率模块
+	{
+		Drv_Hrm_Open(HrmProcess_Isr);
+		Drv_Hrm_Start();
+		
+		MID_HRM_RTT_LOG(0, "Drv_Hrm_Start \r\n");
+	}
+	
 	return 0;  
 }
 
@@ -105,8 +110,17 @@ uint16 HrmStart(void)
 // 0xFF   :  操作失败
 uint16 HrmStop(void)    
 {
-	Drv_Hrm_Stop();
-	Drv_Hrm_Close();
+	if(0 == hrmEventCnt)
+		return 0xFF;
+
+	hrmEventCnt--;
+	if(0 == hrmEventCnt)
+	{
+		Drv_Hrm_Stop();
+		Drv_Hrm_Close();
+
+		MID_HRM_RTT_LOG(0, "Drv_Hrm_Stop \r\n");		
+	}
 
 	return 0;
 }
@@ -128,7 +142,7 @@ static uint64 get_tick_count(void)
 //返回参数：
 // 0x00   :  操作成功
 // 0xFF   :  操作失败
-uint8 HrmCalculate(void)   
+uint8 HrmCalculate(void)
 {
     return Drv_Hrm_Calculate(get_tick_count());
 }

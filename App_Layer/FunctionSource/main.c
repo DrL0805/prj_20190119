@@ -45,7 +45,9 @@ static void Bsp_Init(void)
 	Mid_SportScene_Init();
 	Mid_WeatherScene_Init();
 	Mid_GestureScene_Init();
+	Mid_HeartRateScene_Init();
 	Scene_Sedentary_Init();
+	
 	
 	App_Protocal_Init();
 	Mid_Ble_Init();

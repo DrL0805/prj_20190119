@@ -3,7 +3,7 @@
 
 #include "platform_common.h"
 
-#define MID_HRM_RTT_DEBUG	3
+#define MID_HRM_RTT_DEBUG	1
 #if (1 == MID_HRM_RTT_DEBUG)	// ´íÎóµÈ¼¶
 #define MID_HRM_RTT_LOG(...)
 #define MID_HRM_RTT_WARN(...)
@@ -28,11 +28,10 @@ typedef enum
     MID_HRM_ON_TOUCH  = 1,
 }hrm_touch_t;
 
-typedef struct 
+typedef struct
 {
-	uint16			id;
-}hrm_event_s;
-
+	bool		InitFlg;	
+}Mid_Hrm_Param_t;
 
 void HrmAccelMenSet(int16 *fifodata);
 uint16 HrmStart(void);
