@@ -887,7 +887,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
 //    app_task_msg_t  appMsg;
 
 
-#if(ENABLE_PRINT_DATA ==1)
+#if (ENABLE_PRINT_DATA ==1)
     uint8 i;
     SEGGER_RTT_printf(0,"Interact Data:\n");
     for(i = 0; i < protocal->packet.att.loadLength + 6; i++)
@@ -904,7 +904,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
 	switch(protocal->packet.att.load.content.interfaceIndex2)
     {
     case PROT_NEW_MSG:  //0x01: 新消息通知，（未使用，使用的是消息详情）
-//		MOD_PDU_RTT_LOG(0, "PROT_NEW_MSG");
+		MOD_PDU_RTT_LOG(0, "PROT_NEW_MSG \r\n");
     Protocal_SendACK(protocal,SUCCESS);
         appRemindState = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
                        + ((uint32)protocal->packet.att.load.content.parameter[1] << 16)
@@ -930,7 +930,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         }
         break;
     case PROT_MSG_SWITCH://0x02：通知开关，app设置消息提醒开关是发送此指令
-//		MOD_PDU_RTT_LOG(0, "PROT_MSG_SWITCH");
+		MOD_PDU_RTT_LOG(0, "PROT_MSG_SWITCH \r\n");
         if (protocal->packet.att.load.content.interfaceType == PROTOCAL_GET)//获取
         {
 			protocal->packet.att.loadLength += 4;
@@ -964,8 +964,8 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         break;
     case PROT_INCALL_RESP:   // 0x03: 来电通知反馈，只产品发送
         break;
-    case PROT_CANCEL_MSG:    //0x04:消息取消通知 
-		MOD_PDU_RTT_LOG(0, "PROT_CANCEL_MSG");
+    case PROT_CANCEL_MSG:    //0x04:消息取消通知 ,如挂掉电话DrL
+		MOD_PDU_RTT_LOG(0, "PROT_CANCEL_MSG \r\n");
     Protocal_SendACK(protocal,SUCCESS);
     appRemindState = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
                    + ((uint32)protocal->packet.att.load.content.parameter[1] << 16)
@@ -991,7 +991,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
     }  
         break;
         case PROT_MSG_DETAIL_SWITCH: //0x05: 消息详情开关
-			MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL_SWITCH");
+			MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL_SWITCH \r\n");
         if (protocal->packet.att.load.content.interfaceType == PROTOCAL_SET)//设置 
         {
            systermConfig.appDetailRemindSwitch     = ((uint32)protocal->packet.att.load.content.parameter[0] << 24) 
@@ -1005,7 +1005,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         }
         break;
     case PROT_MSG_DETAIL://0x06:消息详情通知
-		MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL");
+		MOD_PDU_RTT_LOG(0, "PROT_MSG_DETAIL \r\n");
         //现在暂无消息详情开关，都用提醒开关
         systermConfig.appDetailRemindSwitch = systermConfig.appRemindSwitch;
 
@@ -1034,7 +1034,7 @@ static uint8 Analysis_Interact(ble_msg_t *protocal)
         break;
 
          case PROT_PHOTO_MODE: //拍照
-		MOD_PDU_RTT_LOG(0, "PROT_PHOTO_MODE %d", protocal->packet.att.load.content.parameter[0]);
+		MOD_PDU_RTT_LOG(0, "PROT_PHOTO_MODE %d \r\n", protocal->packet.att.load.content.parameter[0]);
         if (protocal->packet.att.load.content.parameter[0] == 0x00)//退出
         {
 //            message.state   = EXIT_TAKE_PHOTO_MODE;

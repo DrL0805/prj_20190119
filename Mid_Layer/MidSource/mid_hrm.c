@@ -8,7 +8,7 @@
 /* FreeRTOS includes */
 #include "rtos.h"
 
-#include "drv_hrm.h"
+
 #include "mid_hrm.h"
 //#include "multimodule_task.h"
 #include "main.h"

@@ -3,7 +3,7 @@
 
 #include "platform_common.h"
 
-#define SCENE_HRM_RTT_DEBUG	3
+#define SCENE_HRM_RTT_DEBUG	1
 #if (1 == SCENE_HRM_RTT_DEBUG)	// ´íÎóµÈ¼¶
 #define SCENE_HRM_RTT_LOG(...)
 #define SCENE_HRM_RTT_WARN(...)

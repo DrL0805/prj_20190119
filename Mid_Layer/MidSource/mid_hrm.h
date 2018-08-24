@@ -2,8 +2,9 @@
 #define MID_HRM_H
 
 #include "platform_common.h"
+#include "drv_hrm.h"
 
-#define MID_HRM_RTT_DEBUG	1
+#define MID_HRM_RTT_DEBUG	3
 #if (1 == MID_HRM_RTT_DEBUG)	// ´íÎóµÈ¼¶
 #define MID_HRM_RTT_LOG(...)
 #define MID_HRM_RTT_WARN(...)
@@ -22,11 +23,11 @@
 #define MID_HRM_RTT_ERR(...)
 #endif
 
-typedef enum 
-{
-    MID_HRM_OFF_TOUCH  = 0,
-    MID_HRM_ON_TOUCH  = 1,
-}hrm_touch_t;
+//typedef enum 
+//{
+//    MID_HRM_OFF_TOUCH  = 0,
+//    MID_HRM_ON_TOUCH  = 1,
+//}hrm_touch_t;
 
 typedef struct
 {

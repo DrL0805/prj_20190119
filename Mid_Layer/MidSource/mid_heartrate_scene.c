@@ -5,14 +5,14 @@
 #include "mid_heartrate_scene.h"
 #include "main.h"
 
-#if 1 //for compile
-typedef enum 
-{
-    ON_TOUCH    = 1,
-    OFF_TOUCH   = 0,
-}bsp_touch_state_s;
+//#if 1 //for compile
+//typedef enum 
+//{
+//    ON_TOUCH    = 1,
+//    OFF_TOUCH   = 0,
+//}bsp_touch_state_s;
 
-#endif
+//#endif
 
 /*************** macro define ********************************/
 #define 	HEARTRATE_LOG_MAX_NUM 		3 //记录最近3次的测量结果
@@ -132,7 +132,7 @@ void HrmLogStorageProcess(void)
 	{
 		Mid_Hrm_TouchStatusRead(&touchstate);
 	  	Mid_Hrm_Read(&u8Temp);
-	  	if (touchstate == OFF_TOUCH && offTouchCnt >= OFF_TOUCH_MAX)
+	  	if ((touchstate == OFF_TOUCH) && (offTouchCnt >= OFF_TOUCH_MAX))
 	  	{
 	  		logHR 					= 0;
 	  		logHrStatus 			= HRM_LOG_NULL;	
@@ -163,7 +163,7 @@ void HrmLogStorageProcess(void)
 			LogHrBuf[LogHrBufCnt]	= u8Temp;
 			LogHrBufCnt++;
 		}
-	}	
+	}
 }
 
 //**********************************************************************
@@ -176,7 +176,7 @@ void HrmLogPeriodProcess(void)
 	static uint8_t stMinCnt = 0;
 	
 	/* 2min调用一次	*/
-	if(++stMinCnt >= 1)
+	if(++stMinCnt >= 2)
 	{
 		stMinCnt = 0;
 		

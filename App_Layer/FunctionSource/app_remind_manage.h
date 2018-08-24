@@ -24,17 +24,14 @@
 #endif
 
 #define 	APP_REMIND_MSG_MAX_LENGHT 			214	//每条信息的最大长度
-
 #define 	APP_REMIND_MSG_VALID_MAX_LENGHT  	192//信息有效内容部分的最大长度
 
-#define 	APP_REMIND_MSG_MAX_LIST 			20 //可记录的最大信息条数[20 * 2] ： 20*198 ＝ 3960 flash一个区（剩余136bytes）
+#define 	APP_REMIND_NANE_MAX_LENGHT 			20		// 名字最大长度
+#define 	APP_REMIND_PHONENUM_MAX_LENGHT 		20		// 电话号码最大长度
 
-#define 	APP_REMIND_NANE_MAX_LENGHT 			20
-#define 	APP_REMIND_PHONENUM_MAX_LENGHT 		20
-
-#define 	APP_REMIND_ASCRIPTION_MAX_LENGHT 	10
-#define 	APP_REMIND_DATAIL_MAX_LENGHT 		50
-#define 	APP_REMIND_CONTENT_MAX_LENGHT 		62
+#define 	APP_REMIND_ASCRIPTION_MAX_LENGHT 	10		// 归属地
+#define 	APP_REMIND_DATAIL_MAX_LENGHT 		50		// 消息具体内容
+#define 	APP_REMIND_CONTENT_MAX_LENGHT 		62		// 提醒内容长度
 
 
 
@@ -44,9 +41,10 @@ typedef union
 	uint16_t msg[APP_REMIND_CONTENT_MAX_LENGHT];
 	struct 
 	{		
-		uint16_t 	ascription[APP_REMIND_ASCRIPTION_MAX_LENGHT];//归属地（unicode 编码）
-		uint16_t  	ascriptionlen;
+		uint16_t 	ascription[APP_REMIND_ASCRIPTION_MAX_LENGHT];		// 归属地，如：深圳,广东
+		uint16_t  	ascriptionlen;										// 
 		uint16_t 	detail[APP_REMIND_DATAIL_MAX_LENGHT]; // 消息具体内容，如：张四龙:[4条]张四龙:我是说我
+																		 //如：呼入电话
 		uint16_t 	detaillen;
 	}u;
 }msg_content_t;
@@ -57,19 +55,20 @@ typedef union
 {	
 	uint8_t 		data[APP_REMIND_MSG_MAX_LENGHT];
 	struct 
-	{	
+	{
 		uint32_t		utc;
 		uint16_t 		totallen;
-		uint16_t 		name[APP_REMIND_NANE_MAX_LENGHT]; // 消息类型名称，如：微信，QQ等
+		uint16_t 		name[APP_REMIND_NANE_MAX_LENGHT]; 				// 消息类型名称，如：微信，QQ等
+																		// 若为联系人电话，则为联系人姓名，如：小明
 		uint16_t 		namelen;
-		uint16_t 		phonenumber[APP_REMIND_PHONENUM_MAX_LENGHT];//电话号码（unicode 编码）
-		uint16_t 		phonenumberlen;
+		uint16_t 		phonenumber[APP_REMIND_PHONENUM_MAX_LENGHT];	// 电话号码，如：13528722324
+		uint16_t 		phonenumberlen;									// 电话号码长度
 		msg_content_t 	content;
 	}remindMsg;
 }app_remind_msg_t;
 
 
-void App_RemindManage_SaveInit(void);
+void App_RemindManage_Init(void);
 void App_RemindManage_MissRemindSumRead(uint32_t msgClassify,uint8_t *listSumNum);
 void App_RemindManage_MissRemindRead(app_remind_msg_t *dailyMissRemindMsg,uint32_t msgClassify,uint8_t listNum);
 void App_RemindManage_MissRemindDelete(uint32_t msgClassify,uint8_t listnum);

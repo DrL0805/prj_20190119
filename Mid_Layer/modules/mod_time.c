@@ -14,13 +14,13 @@ static inline void Mod_Time_RTCSecHandler(void)
 {
 	rtc_time_s tRTCTime;
 	Mid_Rtc_TimeRead(&tRTCTime);
-	MOD_TIME_RTT_LOG(0,"20%d/%d/%d %02d:%02d:%02d \r\n",tRTCTime.year, tRTCTime.month, tRTCTime.day, tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
+//	MOD_TIME_RTT_LOG(0,"20%d/%d/%d %02d:%02d:%02d \r\n",tRTCTime.year, tRTCTime.month, tRTCTime.day, tRTCTime.hour, tRTCTime.min, tRTCTime.sec);
 
 	// 每秒检测一次锁屏事件
 	App_Window_LockWinCnt();
 
 	// 心率log信息存储
-//	HrmLogStorageProcess();
+	HrmLogStorageProcess();
 	
 	//有与手机强关联状态
 	if (phoneState.state != PHONE_STATE_NORMAL)
