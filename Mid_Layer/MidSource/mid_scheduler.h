@@ -15,7 +15,7 @@
 #include "mid_uart.h"
 #include "mid_rtc.h"
 //#include "mid_stopwatch.h"
-//#include "mid_nandflash.h"
+#include "mid_nandflash.h"
 
 //#include "App_win_process.h"
 #include "main.h"

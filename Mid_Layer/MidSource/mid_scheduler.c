@@ -45,6 +45,10 @@ static uint32_t tTmp;
 uint8_t stFlashWriteBuf[2177], stFlashReadBuf[2177];
 static void KeyTest(void)
 {
+	#if 1	// 气压环温	
+	MID_SCHD_RTT_LOG(0,"Drv_AirPress_SelfTest %d \r\n", Drv_AirPress_SelfTest());
+	#endif
+	
 	#if 0	// 心率测试
 	uint8_t tTouchFlg;
 //	MID_SCHD_RTT_LOG(0,"Drv_Hrm_CheckHw %d \r\n", Mid_Hrm_FactoryTest());
@@ -90,7 +94,7 @@ static void KeyTest(void)
 	#endif
 	
 	#if 0	// NandFlash 测试
-	Mid_NandFlash_SelfTest();
+	MID_SCHD_RTT_LOG(0,"Mid_NandFlash_SelfTest %02X \r\n", Mid_NandFlash_SelfTest());
 	#endif
 	
 	#if 0	// LCD测试
@@ -100,18 +104,18 @@ static void KeyTest(void)
 	App_Lcd_TaskEventSet(&LcdMsg, 0);
 	#endif
 	
-	#if 0	// 字库测试
+	#if 1	// 字库测试
 	// 点阵读取测试
-	font_para_t FontPram;
-	FontPram.code.codeGB = 0xC4BF;		// "目"
-	FontPram.dataAddr = tDotBuf;
-	FontPram.sizeKind = GB_SIZE_16X16;
-	Mid_Font_ReadGB(&FontPram);
-	
-	FontPram.code.codeASCII = 0x41;		// "A"
-	FontPram.dataAddr = tDotBuf;
-	FontPram.sizeKind = ASCII_SIZE_8X16;
-	Mid_Font_ReadASCII(&FontPram);
+//	font_para_t FontPram;
+//	FontPram.code.codeGB = 0xC4BF;		// "目"
+//	FontPram.dataAddr = tDotBuf;
+//	FontPram.sizeKind = GB_SIZE_16X16;
+//	Mid_Font_ReadGB(&FontPram);
+//	
+//	FontPram.code.codeASCII = 0x41;		// "A"
+//	FontPram.dataAddr = tDotBuf;
+//	FontPram.sizeKind = ASCII_SIZE_8X16;
+//	Mid_Font_ReadASCII(&FontPram);
 	
 	// 自检函数	
 	MID_SCHD_RTT_LOG(0,"Drv_Font_SelfTest %d \r\n", Mid_Font_SelfTest());	

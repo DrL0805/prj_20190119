@@ -121,6 +121,8 @@
 #define FLASH_CS_PIN    37    //4G flash Ƭѡ
 #endif
 
+#define NAND_FLASH_CS_PIN    37    //4G flash Ƭѡ
+
 #ifdef FONT_MODULE
 #define FONT_CS_PIN     28    //�ֿ�Ƭѡ GT
 #endif

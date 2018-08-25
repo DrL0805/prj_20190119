@@ -40,7 +40,8 @@
 
 #include "app_variable.h"
 
-
+// debug
+#include "drv_airpress.h"
 
 #endif
 

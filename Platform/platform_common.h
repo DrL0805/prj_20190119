@@ -28,14 +28,15 @@ typedef int8_t   int8;
 
 typedef enum
 {
-   Ret_OK,            
-   Ret_Fail,          
-   Ret_InvalidParam,  
-   Ret_DeviceBusy,    
-   Ret_NoInit, 
-   Ret_NoDevice,
-   Ret_QueueFull,   //?車芍D?y
-   Ret_QueueEmpty,  //?車芍D??
+	Ret_OK,            
+	Ret_Fail,          
+	Ret_InvalidParam,  
+	Ret_DeviceBusy,    
+	Ret_NoInit, 
+	Ret_NoDevice,
+	Ret_QueueFull,   //?車芍D?y
+	Ret_QueueEmpty,  //?車芍D??
+	Ret_DeviceError,
 }ret_type;
 
 typedef void comm_cb(void);

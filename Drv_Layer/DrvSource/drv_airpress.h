@@ -1,6 +1,7 @@
 #ifndef AIR_PRESSURE_H
 #define AIR_PRESSURE_H
 
+#include "platform_common.h"
 
 //oversampling rate
 typedef enum
@@ -31,21 +32,21 @@ typedef enum
 //control reg status
 typedef enum
 {
-    COEF_RDY  	= 0x80,
-    SENSOR_RDY  = 0x40,
-    TMP_RDY  	= 0x20,
-    RPS_RDY 	= 0x10,
+    COEF_RDY  	= 0x80,		// 系数完成
+    SENSOR_RDY  = 0x40,		// 传感器初始化完成
+    TMP_RDY  	= 0x20,		// 温度新数据可读
+    RPS_RDY 	= 0x10,		// 气压新数据可读
 }AirPressSensorState;
 
 // measurement mode and type
 typedef enum
 {
-    STANDBY  		= 0x00,
-    PRS_MEAS  		= 0x01,
-    TMP_MEAS  		= 0x02,
-    BG_PRS_MEAS 	= 0x05,
-	BG_TMP_MEAS 	= 0x06,
-	BG_ALL_MEAS		= 0x07,
+    STANDBY  		= 0x00,		// 待机模式
+    PRS_MEAS  		= 0x01,		// 气压测量
+    TMP_MEAS  		= 0x02,		// 温度测量
+    BG_PRS_MEAS 	= 0x05,		// 周期性气压测量
+	BG_TMP_MEAS 	= 0x06,		// 周期性温度测量
+	BG_ALL_MEAS		= 0x07,		// 周期性气压和温度测量
 }AirPressMode;
 
 //**********************************************************************
@@ -167,4 +168,13 @@ extern uint8 Drv_AirPress_SelfTest(void);
 // 0x01    :    设置失败
 //**********************************************************************
 uint8 Drv_AirPress_Standby(void);
+
+
+uint8 Drv_AirPress_PressCvtParaConfig(uint8 OSR_Val);
+
+uint8 Drv_AirPress_TempCvtParaConfig(uint8 OSR_Val);
+
+void Drv_AirPress_SoftReset(void);
+
+
 #endif

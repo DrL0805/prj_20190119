@@ -3,6 +3,7 @@
 
 #include "main.h"
 
+
 static void Bsp_Init(void)
 {
 	Mid_Schd_ParamInit();	// 共享互斥初始化放在前面
@@ -16,6 +17,7 @@ static void Bsp_Init(void)
 	Mid_Accel_Init();
 	Mid_Gyro_Init();
 	Mid_Hrm_Init();
+	Drv_AirPress_Init();
 	
 	Drv_RGBLcd_Init();
 	
@@ -38,7 +40,7 @@ static void Bsp_Init(void)
 	
 //	Drv_IT7259_Init();
 	
-//	Mid_NandFlash_Init();
+	Mid_NandFlash_Init();
 
 	// 场景数据初始化
 	Mid_SleepScene_Init();
