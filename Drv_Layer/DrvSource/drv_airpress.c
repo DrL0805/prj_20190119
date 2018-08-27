@@ -14,7 +14,7 @@
 #define	HP5806_ADDR          		(0x77 << 1)
 
 // const define                                 
-#define	HP5806_CHIP_ID				16
+#define	HP5806_CHIP_ID				0x10
 
 // register macro
 #define HP5806_PSR_TMP_READ_REG		0x00
@@ -86,7 +86,7 @@ static uint8 sensorErrorCnt; 		//记录传感器异常次数
 
 //**********************************************************************
 // 函数功能: 设置传感器寄存器
-// 输入参数：	
+// 输入参数：
 // u8Reg   : 命令或偏移地址
 // data    : 写入的数据
 // 返回参数：无
@@ -97,7 +97,7 @@ static void AirPress_RegWrite(uint8 u8Reg, uint8 *data, uint8 dLen)
 
 //**********************************************************************
 // 函数功能: 读传感器寄存器
-// 输入参数：	
+// 输入参数：
 // cmd 	   : 命令或偏移地址
 // data    : 数据指针
 // dLen    : 读取的数据长度
@@ -224,7 +224,7 @@ void Drv_AirPress_SoftReset(void)
     AirPress_RegWrite(HP5806_RESET_REG, ui8Regtemp, 1);
 
 	//延时等待芯片准备好
-	SMDrv_SYS_DelayMs(50);
+	SMDrv_SYS_DelayMs(5);
 }
 
 
@@ -239,38 +239,25 @@ uint8 Drv_AirPress_Init(void)
 {
     uint8 u8ret = 0x00;
     uint8 ui8Regtemp[1] = {0x00};
+	uint8_t tCnt = 0;
 
-	Drv_AirPress_EnableIO();
-	
+	Drv_AirPress_EnableIO();	
 	Drv_AirPress_SoftReset();
 
-	//确保获取到校准参数
-	if (!(COEF_RDY & Drv_AirPress_GetStatus()))
-    {
-        SMDrv_SYS_DelayMs(40);
-        // return 0x01;
-    }
-	
-	AirPress_RegRead(HP5806_PROD_REV_ID_REG, ui8Regtemp, 1);
+	while(1)	//确保获取到校准参数
+	{
+		SMDrv_SYS_DelayMs(1);
+		if(COEF_RDY & Drv_AirPress_GetStatus())
+			break;
+		if(++tCnt > 20)
+			return Ret_Fail;
+	}
 
-	/* read now the calibration coeffs, temperature coef source and store */
+	// 获取校准系数
     Drv_AirPress_Read_Calib();
-	
 	Drv_AirPress_DisableIO();
 
-    return u8ret;
-}
-
-//**********************************************************************
-// 函数功能:	硬件关闭
-// 输入参数：	无
-// 返回参数：	
-// 0x00    :    设置成功
-// 0x01    :    设置失败
-//**********************************************************************
-uint8 Drv_AirPress_Close(void)
-{
-    return SMDrv_SWI2C_Close(AP_IIC_MODULE); 
+    return Ret_OK;	
 }
 
 //**********************************************************************
@@ -280,40 +267,27 @@ uint8 Drv_AirPress_Close(void)
 //**********************************************************************
 void Drv_AirPress_Calibrate(void)
 {
-	
 }
 
 //**********************************************************************
 // 函数功能:  测量气温时进行的传感器配置
-// 输入参数：	
-// OSR_Val ： 使用的下采集率
-// 返回参数：	
-// 0x00    :  设置成功
-// 0x01    :  设置失败
-// 0x02    :  参数非法
+// 输入参数： OSR_Val ： 使用的下采集率
+// 返回参数 
 //**********************************************************************
 uint8 Drv_AirPress_TempCvtParaConfig(uint8 OSR_Val)
 {
 	uint8 ui8Regtemp[1] = {0x00};
+	uint32_t tCnt = 0;
 
-	//// 2018.7.20 by yu，采样改变时作一次配置更新
-	#if 1
-    if(	OSR_Val != OSR_1 && OSR_Val != OSR_2 && 
-		OSR_Val != OSR_4 && OSR_Val != OSR_8 &&
-		OSR_Val != OSR_16 && OSR_Val != OSR_32 &&
-		OSR_Val != OSR_64 && OSR_Val != OSR_128 )
-    {
+	if(OSR_Val >= OSR_ERR)
 		return Ret_InvalidParam;
-	}
 	
-	//先设置传感器休眠
-    // Drv_AirPress_Standby();
-
+// 	//先设置传感器休眠
+//	Drv_AirPress_Standby();	
+	
 	//check sensor ready
     if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))				//read REG: 0X08
-    {
         return Ret_Fail;
-    }
 	
 	//set temperature osr & update temperature Compensation Scale Factors
 	ui8Regtemp[0] = TMP_EXT_MEMS | (OSR_Val << 4) | OSR_Val;                                         
@@ -333,43 +307,34 @@ uint8 Drv_AirPress_TempCvtParaConfig(uint8 OSR_Val)
 	}
 	AirPress_RegWrite(HP5806_CFG_REG, ui8Regtemp, 1);
 
-	//check ready after config
-    // if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
-    // {
-    // 	SMDrv_SYS_DelayMs(15);
-    // 	SEGGER_RTT_printf(0,"Drv_AirPress_TempCvtParaConfig !SENSOR_RDY\n");
-    //     return Ret_Fail;
-    // }
-    #endif
+	// check ready after config
+	while(1)
+	{
+		SMDrv_SYS_DelayMs(1);
+		if (SENSOR_RDY & Drv_AirPress_GetStatus())
+			return Ret_OK;
+		if(++tCnt > 20)
+			return Ret_Fail;
+	}
 
     return Ret_OK;
 }
 
 //**********************************************************************
 // 函数功能:  测量气压或海拔时进行的传感器配置
-// 输入参数：	
-// OSR_Val ： 使用的下采集率
-// 返回参数：	
-// 0x00    :  设置成功
-// 0x01    :  设置失败
-// 0x02    :  参数非法
+// 输入参数： OSR_Val ： 使用的下采集率
+// 返回参数：
 //**********************************************************************
 uint8 Drv_AirPress_PressCvtParaConfig(uint8 OSR_Val)
 {
     uint8 ui8Regtemp[1] = {0x00};
+	uint32_t tCnt = 0;
 
-    //// 2018.7.20 by yu，采样改变时作一次配置更新
-    #if 1
-    if(	OSR_Val != OSR_1 && OSR_Val != OSR_2 && 
-		OSR_Val != OSR_4 && OSR_Val != OSR_8 &&
-		OSR_Val != OSR_16 && OSR_Val != OSR_32 &&
-		OSR_Val != OSR_64 && OSR_Val != OSR_128 )
-    {
+	if(OSR_Val >= OSR_ERR)
 		return Ret_InvalidParam;
-	}
 
- 	//先设置传感器休眠
-    // Drv_AirPress_Standby();
+// 	//先设置传感器休眠
+//	Drv_AirPress_Standby();	;
 	
 	//check ready
     if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
@@ -400,14 +365,14 @@ uint8 Drv_AirPress_PressCvtParaConfig(uint8 OSR_Val)
 	}
 	AirPress_RegWrite(HP5806_CFG_REG, ui8Regtemp, 1);				//write REG: 0X09
 
-	//check ready
- //    if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
- //    {
- //    	SMDrv_SYS_DelayMs(15);
- //    	SEGGER_RTT_printf(0,"Drv_AirPress_PressCvtParaConfig !SENSOR_RDY\n");
- //        return Ret_Fail;
- //    }	
-	#endif
+	while(1)
+	{
+		SMDrv_SYS_DelayMs(1);
+		if (SENSOR_RDY & Drv_AirPress_GetStatus())
+			return Ret_OK;
+		if(++tCnt > 20)
+			return Ret_Fail;
+	}	
 
     return Ret_OK;
 }
@@ -416,57 +381,21 @@ uint8 Drv_AirPress_PressCvtParaConfig(uint8 OSR_Val)
 // 函数功能:	启动温度转换
 // 输入参数：	
 // OSR_Val ： 	使用的下采集率
-// 返回参数：	
-// 0x00    :  设置成功
-// 0x01    :  设置失败
-// 0x02    :  参数非法
+// 返回参数：
 //**********************************************************************
 uint8 Drv_AirPress_TempCvt(uint8 OSR_Val)
 {
     uint8 ui8Regtemp[1] = {0x00};
 
-    if(	OSR_Val != OSR_1 && OSR_Val != OSR_2 && 
-		OSR_Val != OSR_4 && OSR_Val != OSR_8 &&
-		OSR_Val != OSR_16 && OSR_Val != OSR_32 &&
-		OSR_Val != OSR_64 && OSR_Val != OSR_128 )
-    {
+	if(OSR_Val >= OSR_ERR)
 		return Ret_InvalidParam;
-	}
 	
 	//check sensor ready
     if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))				//read REG: 0X08
     {
         return Ret_Fail;
     }
-
-	#if 0
-	// 2018.7.20 by yu，不对传感器配置进行频繁配置，防止异常
-	//set temperature osr & update temperature Compensation Scale Factors
-	ui8Regtemp[0] = TMP_EXT_MEMS | (OSR_Val << 4) | OSR_Val;                                         
-    AirPress_RegWrite(HP5806_TMP_CFG_REG, ui8Regtemp, 1); 		//write REG:0x07
-	HP5806_calib.tmp_osr_scale_coeff = CompScaleFactors[OSR_Val];
 	
-	/*If oversampling rate is greater than 8 times, then set SHIFT bit in CFG_REG */
-	ui8Regtemp[0] = 0;
-	AirPress_RegRead(HP5806_CFG_REG, ui8Regtemp, 1);			//read REG: 0X09
-    if (OSR_Val > OSR_8)
-	{
-		ui8Regtemp[0] |= HP5806_TMP_SHIFT_EN;
-    }
-	else
-	{
-		ui8Regtemp[0] &= ~HP5806_TMP_SHIFT_EN;
-	}
-	AirPress_RegWrite(HP5806_CFG_REG, ui8Regtemp, 1);
-
-	//check ready after config
-    if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
-    {
-    	SMDrv_SYS_DelayMs(15);
-    }
-	#endif
-	// 2018.7.20 by yu
-
 	//start Temperature measurement
 	ui8Regtemp[0] = TMP_MEAS;
     AirPress_RegWrite(HP5806_MEAS_CFG_REG, ui8Regtemp, 1);		//write REG: 0X08
@@ -478,10 +407,7 @@ uint8 Drv_AirPress_TempCvt(uint8 OSR_Val)
 // 函数功能:  启动温度和压力转换
 // 输入参数：	
 // OSR_Val ： 使用的下采集率
-// 返回参数：	
-// 0x00    :  设置成功
-// 0x01    :  设置失败
-// 0x02    :  参数非法
+// 返回参数：
 //**********************************************************************
 uint8 Drv_AirPress_TemPressCvt(uint8 OSR_Val)
 {
@@ -489,55 +415,14 @@ uint8 Drv_AirPress_TemPressCvt(uint8 OSR_Val)
 
     static uint8 flagfirst = 1;
 
-    
-    if(	OSR_Val != OSR_1 && OSR_Val != OSR_2 && 
-		OSR_Val != OSR_4 && OSR_Val != OSR_8 &&
-		OSR_Val != OSR_16 && OSR_Val != OSR_32 &&
-		OSR_Val != OSR_64 && OSR_Val != OSR_128 )
-    {
+	if(OSR_Val >= OSR_ERR)
 		return Ret_InvalidParam;
-	}
 	
 	//check ready
     if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
     {
         return Ret_Fail;
     }
-
-    // 2018.7.20 by yu，不对传感器配置进行频繁配置，防止异常
-	#if 0
-	//set temperature osr & update temperature Compensation Scale Factors
-	ui8Regtemp[0] = TMP_EXT_MEMS | (OSR_Val << 4) | OSR_Val;                                         
-    AirPress_RegWrite(HP5806_TMP_CFG_REG, ui8Regtemp, 1);			//write REG:0x07
-	HP5806_calib.tmp_osr_scale_coeff = CompScaleFactors[OSR_Val];
-	
-	//set Pressure osr & update Pressure Compensation Scale Factors
-	ui8Regtemp[0] = (OSR_Val << 4) | OSR_Val;                                         
-    AirPress_RegWrite(HP5806_PRS_CFG_REG, ui8Regtemp, 1);			//write REG:0x06
-	HP5806_calib.prs_osr_scale_coeff = CompScaleFactors[OSR_Val];
-	
-	/*If oversampling rate is greater than 8 times, then set SHIFT bit in CFG_REG */
-	ui8Regtemp[0] = 0;
-	AirPress_RegRead(HP5806_CFG_REG, ui8Regtemp, 1);				//read REG: 0X09
-    if (OSR_Val > OSR_8)
-	{
-		ui8Regtemp[0] |= HP5806_TMP_SHIFT_EN | HP5806_PRS_SHIFT_EN;
-    }
-	else
-	{
-		ui8Regtemp[0] &= ~(HP5806_TMP_SHIFT_EN | HP5806_PRS_SHIFT_EN);
-	}
-	AirPress_RegWrite(HP5806_CFG_REG, ui8Regtemp, 1);				//write REG: 0X09
-	
-
-	//check ready after config
-    if (!(SENSOR_RDY & Drv_AirPress_GetStatus()))					//read REG: 0X08
-    {
-    	SMDrv_SYS_DelayMs(15);
-    	SEGGER_RTT_printf(0,"Drv_AirPress_TemPressCvt SENSOR_RDY wait\n");
-    }
-	#endif
-	// 2018.7.20 by yu
 
 	//start Pressure measurement
 	ui8Regtemp[0] = BG_ALL_MEAS;
@@ -632,10 +517,6 @@ uint8 Drv_AirPress_ReadTemp(int16 *Temp)
 	double	 temp_scaled;
 	double	 temp_final;
 
-    if(Temp == NULL)
-    {
-        return Ret_InvalidParam;
-    }
     if (!(TMP_RDY & Drv_AirPress_GetStatus()))			//read REG: 0X08
     {
         *Temp = 0xff;

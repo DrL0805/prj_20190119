@@ -97,7 +97,7 @@ static void KeyTest(void)
 	MID_SCHD_RTT_LOG(0,"Mid_NandFlash_SelfTest %02X \r\n", Mid_NandFlash_SelfTest());
 	#endif
 	
-	#if 0	// LCD测试
+	#if 1	// LCD测试
 	App_Lcd_TaskMsg_T	LcdMsg;
 	
 	LcdMsg.Id = eAppLcdEventOuter;

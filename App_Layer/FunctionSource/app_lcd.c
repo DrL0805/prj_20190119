@@ -61,8 +61,9 @@ static void App_Lcd_TaskProcess(void *pvParameters)
 			switch (Msg.Id)
             {
             	case eAppLcdEventOuter:		// 外部事件，如key、触摸等
+//					APP_LCD_RTT_LOG(0,"eAppLcdEventOuter \r\n");
 					App_Lcd_TimerStart(1000);
-					APP_LCD_RTT_LOG(0,"eAppLcdEventOuter \r\n");
+					Mid_Lcd_Test();
             		break;
             	case eAppLcdEventInside:	// 内事件，如LCD定时器等
 					Mid_Lcd_Test();

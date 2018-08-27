@@ -50,7 +50,6 @@ static void Bsp_Init(void)
 	Mid_HeartRateScene_Init();
 	Scene_Sedentary_Init();
 	
-	
 	App_Protocal_Init();
 	Mid_Ble_Init();
 //    App_Protocal_BleStateSet(BLE_POWEROFF);
@@ -76,7 +75,7 @@ static void Task_Init(void)
 	
 	// 应用层任务
 	App_Win_TaskCreate();
-	App_Lcd_TaskCreate();	
+	App_Lcd_TaskCreate();
 }
 
 static void start_task(void *pvParameters)
