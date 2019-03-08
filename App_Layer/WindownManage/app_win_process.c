@@ -30,7 +30,7 @@ static QueueHandle_t 	Win_QueueHandle;				/**< Queue handler for flash task */
 #define AppWinNum (sizeof(AppWin)/sizeof(AppWin[0]))		// 窗口数量
 static 	APP_WIN_T	AppWin[] =
 		{
-			// 创建顺序无须与eAppWinHandle中的参数对应，函数调用前会先搜索索引
+			// 创建顺序无须与 eAppWinHandle 中的参数对应，函数调用前会先搜索索引
 			{ eLockWinHandle, App_LockWin_Init, App_LockWin_Cb},
 			{ eStoreWinHandle, App_StoreWin_Init, App_StoreWin_Cb},
 			{ ePwronWinHandle, App_PwronWin_Init, App_PwronWin_Cb},
